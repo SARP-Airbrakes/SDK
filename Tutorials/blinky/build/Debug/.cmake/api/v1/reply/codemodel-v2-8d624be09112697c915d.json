@@ -19,7 +19,7 @@
 					"source" : ".",
 					"targetIndexes" : 
 					[
-						1
+						2
 					]
 				},
 				{
@@ -34,7 +34,8 @@
 					"source" : "cmake/stm32cubemx",
 					"targetIndexes" : 
 					[
-						0
+						0,
+						1
 					]
 				}
 			],
@@ -51,7 +52,8 @@
 					"targetIndexes" : 
 					[
 						0,
-						1
+						1,
+						2
 					]
 				}
 			],
@@ -59,15 +61,22 @@
 			[
 				{
 					"directoryIndex" : 1,
+					"id" : "FreeRTOS::@768a070a0fe75716b479",
+					"jsonFile" : "target-FreeRTOS-Debug-6efc4f9ef5fe53f44cde.json",
+					"name" : "FreeRTOS",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
 					"id" : "STM32_Drivers::@768a070a0fe75716b479",
-					"jsonFile" : "target-STM32_Drivers-Debug-9f2850001af9dd4774d1.json",
+					"jsonFile" : "target-STM32_Drivers-Debug-16bdff1f796761273198.json",
 					"name" : "STM32_Drivers",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "blinky::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-blinky-Debug-c2948d413d459d3e51f3.json",
+					"jsonFile" : "target-blinky-Debug-67feb5017ed52e97fc1d.json",
 					"name" : "blinky",
 					"projectIndex" : 0
 				}

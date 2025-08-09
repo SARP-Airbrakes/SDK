@@ -1,9 +1,9 @@
 [
 {
   "directory": "C:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky",
-  "command": "C:\\msys64\\ucrt64\\bin\\cc.exe -DDEBUG -DSTM32L476xx -DUSE_HAL_DRIVER -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Core/Inc -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/CMSIS/Include -g -std=gnu11 -o CMakeFiles\\blinky.dir\\Core\\Src\\main.cpp.obj -c C:\\Users\\fergu\\Documents\\GitHub\\SARP\\SDK\\Tutorials\\blinky\\Core\\Src\\main.cpp",
-  "file": "C:\\Users\\fergu\\Documents\\GitHub\\SARP\\SDK\\Tutorials\\blinky\\Core\\Src\\main.cpp",
-  "output": "CMakeFiles\\blinky.dir\\Core\\Src\\main.cpp.obj"
+  "command": "C:\\msys64\\ucrt64\\bin\\cc.exe -DDEBUG -DSTM32L476xx -DUSE_HAL_DRIVER -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Core/Inc -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky/cmake/stm32cubemx/../../Drivers/CMSIS/Include -g -std=gnu11 -o CMakeFiles\\blinky.dir\\Core\\Src\\main.cpppp.obj -c C:\\Users\\fergu\\Documents\\GitHub\\SARP\\SDK\\Tutorials\\blinky\\Core\\Src\\main.cpppp",
+  "file": "C:\\Users\\fergu\\Documents\\GitHub\\SARP\\SDK\\Tutorials\\blinky\\Core\\Src\\main.cpppp",
+  "output": "CMakeFiles\\blinky.dir\\Core\\Src\\main.cpppp.obj"
 },
 {
   "directory": "C:/Users/fergu/Documents/GitHub/SARP/SDK/Tutorials/blinky",
