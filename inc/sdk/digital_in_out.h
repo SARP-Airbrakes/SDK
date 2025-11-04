@@ -1,6 +1,6 @@
 #pragma once
-#include "base.hpp"
-#include "pinmap.hpp"
+#include "base.h"
+#include "pinmap.h"
 
 namespace sdk {
 

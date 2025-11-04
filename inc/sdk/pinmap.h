@@ -1,13 +1,14 @@
 #pragma once
+
 #include "stm32f4xx_hal.h"
 
 namespace sdk {
 
 struct Pin {
-    GPIO_TypeDef* port;
+    GPIO_TypeDef *port;
     uint16_t pin;
 
-    constexpr Pin(GPIO_TypeDef* port, uint16_t pin) : port(port), pin(pin) {}
+    constexpr Pin(GPIO_TypeDef *port, uint16_t pin) : port(port), pin(pin) {}
 
     // Default contructor
     constexpr Pin() : port(nullptr), pin(0xFFFF) {}

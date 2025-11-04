@@ -11,10 +11,17 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 }
 
-#include <cstdint>
-#include <cstddef>
+#include <stdint.h>
 
 namespace sdk {
+
+// ==== Common Enums ====
+enum class hal_status {
+    OK = 0x00,
+    ERROR = 0x01,
+    BUSY = 0x02,
+    TIMEOUT = 0x03,
+};
 
 // ===== Common Macros =====
 #ifndef SDK_ASSERT

@@ -1,12 +1,12 @@
 #pragma once
-#include "base.hpp"
-#include "pinmap.hpp"
+#include "base.h"
+#include "pinmap.h"
 
 namespace sdk {
 
-class DigitalIn {
+class DigitalOut {
 public:
-    explicit DigitalIn(Pin pin, GPIOPuPd_TypeDef pull = GPIO_NOPULL) {
+    explicit DigitalOut(Pin pin, int value = 0) {
         _pin = pin;
 
         // Enable GPIO Clock
@@ -18,22 +18,29 @@ public:
 
         GPIO_InitTypeDef init{};
         init.Pin = (1 << _pin.pin);
-        init.Mode = GPIO_MODE_INPUT;
-        init.Pull = pull;
+        init.Mode = GPIO_MODE_OUTPUT_PP;
+        init.Pull = GPIO_NOPULL;
         init.Speed = GPIO_SPEED_FREQ_LOW;
         HAL_GPIO_Init(_pin.port, &init);
+
+        write(value);
+    }
+
+    void write(int value) {
+        HAL_GPIO_WritePin(_pin.port, (1 << _pin.pin), value ? GPIO_PIN_SET : GPIO_PIN_RESET);
     }
 
     int read() const {
         return HAL_GPIO_ReadPin(_pin.port, (1 << _pin.pin));
     }
 
-    operator int() const {
-        return read();
+    DigitalOut& operator= (int value) {
+        write(value);
+        return *this;
     }
 
-    int is_connected() const {
-        return (_pin.port != nullptr);
+    operator int() const {
+        return read();
     }
 
 private:
