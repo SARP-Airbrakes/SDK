@@ -98,6 +98,20 @@ public: // methods
 
     explicit bno055(i2c_master &master, uint8_t addr);
 
+    // Driver run-time functionality
+    
+    /**
+     * Update internal driver state. Blocks current thread while doing so.
+     */
+    void update();
+
+    /**
+     * Returns a copy of the internal driver state.
+     */
+    state fetch();
+
+    // Driver set-up functionality
+
     /**
      * Checks if the driver has connection to the BNO055.
      *
@@ -173,7 +187,7 @@ private:
 
 private:
     
-    state state;
+    state internal_state;
     mutex state_mutex;
 
     i2c_master &master;

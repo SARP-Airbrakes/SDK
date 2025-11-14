@@ -6,16 +6,27 @@
 
 namespace sdk {
 
+/**
+ * Represents a lock on a mutex that lasts the lifetime of this object.
+ */
 class scoped_lock {
 public:
-    explicit scoped_lock(mutex &mutex);
-    ~scoped_lock();
+    explicit scoped_lock(mutex &mutex): locked_mutex(mutex)
+    {
+        locked_mutex.lock();
+    }
 
-    // move-only semantics
+    ~scoped_lock()
+    {
+        locked_mutex.unlock();
+    }
+
+    // move-only, constructor-only semantics
     scoped_lock(const scoped_lock &) = delete;
     scoped_lock(scoped_lock &&) = default;
-    scoped_lock &operator=(const scoped_lock &) = delete;
-    scoped_lock &operator=(scoped_lock &&) = default;
+
+private:
+    mutex &locked_mutex;
 
 };
 

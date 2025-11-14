@@ -9,6 +9,17 @@ bno055::bno055(i2c_master &master, uint8_t addr): master(master), addr(addr)
 {
 }
 
+void bno055::update()
+{
+
+}
+
+bno055::state bno055::fetch()
+{
+    scoped_lock lock(state_mutex);
+    return internal_state;
+}
+
 bno055::result bno055::is_connected()
 {
     if (read_byte(CHIP_ID_ADDR) != CHIP_ID)
@@ -37,6 +48,7 @@ bool bno055::is_calibrated(sensor sensor)
     case sensor::MAGNETOMETER: // bits <1:0>
         return (calib_stat & 0x03) != 3;
     }
+    return false;
 }
 
 void bno055::set_power_mode(pwr_mode mode)
@@ -66,7 +78,8 @@ void bno055::suspend()
 
 uint8_t bno055::read_byte(uint8_t address)
 {
-    // TODO(fergus-xu): read i2c using hal wrapper
+    uint8_t out;
+    master.read(addr, address, &out, 1, false);
     return 0;
 }
 
@@ -80,7 +93,7 @@ uint16_t bno055::read_short(uint8_t lsb, uint8_t msb)
 
 void bno055::write_byte(uint8_t address, uint8_t value)
 {
-    // TODO(fergus-xu): write i2c using hal wrapper
+    master.write(addr, address, &value, 1, false);
 }
 
 void bno055::delay(int ms)
