@@ -5,10 +5,6 @@
 
 namespace sdk {
 
-bno055::bno055(i2c_master &master, uint8_t addr): master(master), addr(addr)
-{
-}
-
 void bno055::update()
 {
 

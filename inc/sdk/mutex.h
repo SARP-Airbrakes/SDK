@@ -2,13 +2,14 @@
 #ifndef AIRBRAKES_SDK_MUTEX_H_
 #define AIRBRAKES_SDK_MUTEX_H_
 
-#include <FreeRTOS.h>
-#include <semphr.h>
+#include <cmsis_os2.h>
 
 namespace sdk {
 
 /**
- * Represents mutual exclusion over ownership of a resource.
+ * Represents mutual exclusion over ownership of a resource. Wraps around an
+ * existing mutex that was generated with STM32CubeMX, and gives it nicer
+ * semantics.
  */
 class mutex {
 public:
@@ -20,9 +21,9 @@ public:
     };
 
 public:
-    mutex();
-    
-    // move-only semantics
+
+    mutex(osMutexId_t handle) : handle(handle) {}
+
     mutex(const mutex &) = delete;
     mutex(mutex &&) = default;
     mutex &operator=(const mutex &) = delete;
@@ -32,6 +33,9 @@ public:
      * If this mutex is unlocked, attempts to lock this mutex. Else, instead
      * blocks the current thread indefinitely until the lock on the mutex is
      * relieved.
+     *
+     * This method is dangerous, as if the mutex is in an invalid state, the
+     * thread may be put to sleep forever.
      */
     void lock();
 
@@ -54,9 +58,8 @@ public:
     status unlock();
 
 private:
+    osMutexId_t handle;
 
-    SemaphoreHandle_t handle;
-    StaticSemaphore_t buffer; // mutex buffer
 };
 
 } // namespace sdk;

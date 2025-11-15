@@ -7,10 +7,6 @@
 
 namespace sdk {
 
-i2c_master::i2c_master(I2C_HandleTypeDef *handle): handle(handle)
-{
-}
-
 i2c_master::status i2c_master::read(uint16_t device_address, uint16_t
         reg_address, uint8_t *data, uint16_t data_size, bool mem_16bit) 
 { 

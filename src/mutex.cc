@@ -3,23 +3,21 @@
 
 namespace sdk {
 
-mutex::mutex() {
-    handle = xSemaphoreCreateMutexStatic(&buffer);
-}
-
 void mutex::lock()
 {
-    xSemaphoreTake(handle, portMAX_DELAY);
+   if (osMutexAcquire(handle, osWaitForever) != osOK) {
+        osDelay(osWaitForever);
+   }
 }
 
 mutex::status mutex::try_lock(uint32_t timeout_ms)
 {
-    return xSemaphoreTake(handle, timeout_ms / portTICK_PERIOD_MS) == pdTRUE ? status::OK : status::IN_USE;
+    return osMutexAcquire(handle, (timeout_ms * osKernelGetTickFreq()) / 1000) == osOK ? status::OK : status::IN_USE;
 }
 
 mutex::status mutex::unlock()
 {
-    return xSemaphoreGive(handle) == pdTRUE ? status::OK : status::ERROR;
+    return osMutexRelease(handle) == osOK ? status::OK : status::ERROR;
 }
 
 }

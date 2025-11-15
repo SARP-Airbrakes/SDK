@@ -96,7 +96,8 @@ public: // types
 
 public: // methods
 
-    explicit bno055(i2c_master &master, uint8_t addr);
+    explicit bno055(mutex &state_mutex, i2c_master &master, uint8_t addr) :
+        state_mutex(state_mutex), master(master), addr(addr) {}
 
     // Driver run-time functionality
     
@@ -188,7 +189,7 @@ private:
 private:
     
     state internal_state;
-    mutex state_mutex;
+    mutex &state_mutex;
 
     i2c_master &master;
     uint8_t addr;
