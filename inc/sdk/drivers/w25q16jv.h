@@ -12,28 +12,22 @@ namespace sdk {
 class w25q16jv {
 public:
 
-    struct state {
-
-    };
-
-public:
-
     /**
      * Constructs a new `w25q16jv` class using the provided SPI interface.
      */
-    w25q16jv(spi &interface, mutex &state_mutex) : interface(interface),
-            state_mutex(state_mutex) {}
+    w25q16jv(spi &interface) : interface(interface) {}
 
     /**
      * Updates the internal driver state.
      */
     void update();
 
-
+    void queue_read();
+    void queue_write();
 
 private:
     spi &interface;
-    mutex &state_mutex;
+    mutex state_mutex;
 
 };
 

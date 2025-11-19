@@ -1,23 +1,31 @@
 
 #include <sdk/mutex.h>
 
+#include <FreeRTOS.h>
+#include <semphr.h>
+
 namespace sdk {
+
+mutex::mutex()
+{
+    handle = xSemaphoreCreateMutex();
+}
 
 void mutex::lock()
 {
-   if (osMutexAcquire(handle, osWaitForever) != osOK) {
-        osDelay(osWaitForever);
-   }
+    try_lock(portMAX_DELAY);
 }
 
 mutex::status mutex::try_lock(uint32_t timeout_ms)
 {
-    return osMutexAcquire(handle, (timeout_ms * osKernelGetTickFreq()) / 1000) == osOK ? status::OK : status::IN_USE;
+    return xSemaphoreTake((SemaphoreHandle_t) handle, pdMS_TO_TICKS(timeout_ms))
+        == pdTRUE ? status::OK : status::IN_USE;
 }
 
 mutex::status mutex::unlock()
 {
-    return osMutexRelease(handle) == osOK ? status::OK : status::ERROR;
+    return xSemaphoreGive((SemaphoreHandle_t) handle) == pdTRUE ? status::OK :
+        status::ERROR;
 }
 
 }

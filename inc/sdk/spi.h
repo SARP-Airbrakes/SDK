@@ -8,8 +8,9 @@
 namespace sdk {
 
 /**
- * A class representing a thread-safe SPI interface. Does not manage chip select
- * lines -- that must be externally managed.
+ * A class representing a thread-safe SPI interface that wraps around a given
+ * HAL SPI interface. Does not manage chip select lines -- that must be
+ * externally managed.
  */
 class spi {
 public:
@@ -25,11 +26,9 @@ public:
 public:
 
     /**
-     * Creates a new `spi` class from a given SPI handle and an associated
-     * mutex.
+     * Creates a new `spi` class from a given SPI HAL interface
      */
-    spi(SPI_HandleTypeDef *handle, mutex &interface_mutex) :
-        handle(handle), interface_mutex(interface_mutex) {}
+    spi(SPI_HandleTypeDef *handle) : handle(handle) {}
 
     /**
      * Receives `size` bytes into `data` from the interface.
@@ -42,7 +41,6 @@ public:
 
 private:
     SPI_HandleTypeDef *handle;
-    mutex &interface_mutex;
 
 };
 

@@ -15,6 +15,7 @@ public:
     {
         locked_mutex.lock();
     }
+    scoped_lock() = delete; // no default-constructor
 
     ~scoped_lock()
     {

@@ -10,7 +10,8 @@
 namespace sdk {
 
 /**
- * A class representing a thread-safe I2C master interface.
+ * A class representing a thread-safe I2C master interface that wraps around a
+ * given HAL I2C interface.
  */
 class i2c_master {
 public:
@@ -26,11 +27,9 @@ public:
 public:
 
     /**
-     * Creates a new `i2c_master` class from a given I2C handle and an
-     * associated mutex.
+     * Creates a new `i2c_master` class from a given I2C HAL handle.
      */
-    i2c_master(I2C_HandleTypeDef *handle, mutex &interface_mutex) :
-        handle(handle), interface_mutex(interface_mutex) {}
+    i2c_master(I2C_HandleTypeDef *handle) : handle(handle) {}
 
     /**
      * Initiates a read from a `reg_address` using the `device_address` given.
@@ -57,7 +56,7 @@ public:
 private:
 
     I2C_HandleTypeDef *handle;
-    mutex &interface_mutex;
+    mutex interface_mutex;
 };
 
 } // namespace sdk
