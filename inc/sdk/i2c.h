@@ -35,10 +35,10 @@ public:
     /**
      * Initiates a read from a `reg_address` using the `device_address` given.
      * Reads `data_size` bytes into `data`. If `mem_16bit` is true, then the
-     * read will use a 16-bit `reg_address` to communicate with the device.
+     * read will use a 10-bit `reg_address` to communicate with the device.
      *
-     * Importantly, the `device_address` is the full address, not the 7-bit
-     * address that datasheets usually list.
+     * Importantly, the `device_address` is the address shifted by one bit left,
+     * not the 7-bit or 10-bit address that datasheets usually list.
      */
     status read(uint16_t device_address, uint16_t reg_address, uint8_t *data,
             uint16_t data_size, bool mem_16bit);

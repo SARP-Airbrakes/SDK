@@ -13,9 +13,9 @@ project(airbrakes_sdk
 )
 
 add_library(airbrakes_sdk OBJECT
-    src/drivers/BNO055.cc
-    src/i2c.cc
-    src/mutex.cc
+    src/i2c_stm.cc
+    src/mutex_rtos.cc
+    src/spi_stm.cc
 )
 
 target_include_directories(airbrakes_sdk PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/inc)
