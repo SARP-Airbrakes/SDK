@@ -13,8 +13,10 @@ project(airbrakes_sdk
 )
 
 add_library(airbrakes_sdk OBJECT
+    src/drivers/w25q16jv.cc
     src/i2c_stm.cc
     src/mutex_rtos.cc
+    src/queue_rtos.cc
     src/spi_stm.cc
 )
 
