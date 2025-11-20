@@ -28,7 +28,9 @@ public:
     /**
      * Creates a new `spi` class from a given SPI HAL interface
      */
-    spi(SPI_HandleTypeDef *handle) : handle(handle) {}
+    spi(SPI_HandleTypeDef *handle) : handle(handle)
+    {
+    }
 
     /**
      * Receives `size` bytes into `data` from the interface.

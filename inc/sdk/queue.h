@@ -93,6 +93,14 @@ public:
         xQueueReceive(handle, (void *) &out, portMAX_DELAY);
         return out;
     }
+
+    /**
+     * Returns true if the queue is empty, else returns false.
+     */
+    bool is_empty()
+    {
+        return uxQueueMessagesWaiting(handle) == 0;
+    }
     
 private:
     QueueHandle_t handle;
