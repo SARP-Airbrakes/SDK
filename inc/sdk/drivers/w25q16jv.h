@@ -3,8 +3,10 @@
 #define AIRBRAKES_SDK_DRIVER_W25Q16JV_H_
 
 #include <sdk/queue.h>
-#include <sdk/shared_pin.h>
+#include <sdk/unique_pin.h>
 #include <sdk/spi.h>
+
+#include <utility>
 
 namespace sdk {
 
@@ -12,17 +14,20 @@ namespace sdk {
  * A class representing a driver for the W25Q16JV NOR flash chip.
  */
 class w25q16jv {
-public:
+public: // constants
 
     static constexpr int WRITE_QUEUE_SIZE = 8; // 12 bytes * 8 = 96 bytes
+
+    static constexpr int PAGE_PROGRAM_COMMAND = 0x02;
+    static constexpr int WRITE_ENABLE_COMMAND = 0x06;
 
 public:
 
     /**
      * Constructs a new `w25q16jv` class using the provided SPI interface.
      */
-    explicit w25q16jv(spi &interface, shared_pin &pin) : interface(interface),
-            pin(pin), write_queue(8)
+    explicit w25q16jv(spi &interface, unique_pin pin) : interface(interface),
+            pin(std::move(pin)), write_queue(8)
     {
     }
 
@@ -52,15 +57,22 @@ private:
 
 private:
 
-    void enable_chip(); // pull cs low
-    void disable_chip(); // put cs high
+    // enables write
+    void enable_write();
+
+    void enable_chip(); // drive cs low
+    void disable_chip(); // drive cs high
 
     // writes to the chip directly
     void write(uint32_t address, uint8_t *data, uint32_t data_size);
 
+
+    // reads the BUSY bit from the chip
+    bool is_busy();
+
 private:
     spi &interface;
-    shared_pin &pin;
+    unique_pin pin;
     mutex state_mutex;
     queue<write_command> write_queue;
 

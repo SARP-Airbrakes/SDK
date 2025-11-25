@@ -17,14 +17,13 @@ i2c_master::status i2c_master::read(uint16_t device_address, uint16_t
     // lock the interface mutex before read
     // scoped_lock lock(interface_mutex);
 
-    HAL_StatusTypeDef status = HAL_I2C_Mem_Read(
+    HAL_StatusTypeDef status = HAL_I2C_Mem_Read_IT(
         handle,
         device_address,
         reg_address,
         mem_16bit ? I2C_MEMADD_SIZE_16BIT : I2C_MEMADD_SIZE_8BIT,
         data,
-        data_size,
-        HAL_MAX_DELAY
+        data_size
     );
     return status == HAL_OK ? status::OK : status::ERROR;
 }

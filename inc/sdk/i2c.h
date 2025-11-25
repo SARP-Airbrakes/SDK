@@ -29,7 +29,9 @@ public:
     /**
      * Creates a new `i2c_master` class from a given I2C HAL handle.
      */
-    i2c_master(I2C_HandleTypeDef *handle) : handle(handle) {}
+    i2c_master(I2C_HandleTypeDef *handle) : handle(handle)
+    {
+    }
 
     /**
      * Initiates a read from a `reg_address` using the `device_address` given.
