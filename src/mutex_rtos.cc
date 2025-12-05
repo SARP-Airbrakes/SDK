@@ -28,4 +28,9 @@ mutex::status mutex::unlock()
         status::ERROR;
 }
 
+void *mutex::unwrap()
+{
+    return handle;
+}
+
 }

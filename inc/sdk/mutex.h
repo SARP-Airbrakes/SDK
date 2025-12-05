@@ -53,6 +53,12 @@ public:
      */
     status unlock();
 
+    /**
+     * Returns the internal handle of this mutex, which may be a
+     * SemaphoreHandle_t, or some other platform-specific representation.
+     */
+    void *unwrap();
+
 private:
 
     void *handle;
