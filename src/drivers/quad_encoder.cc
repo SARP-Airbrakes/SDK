@@ -23,7 +23,7 @@ void quad_encoder::read_and_update(uint16_t updated_pin)
         /* TODO: handling driver error conditions */
     } else {
         /* TODO: imprecision from the rounding */
-        count = (count + inc_dec) % ((int) counts_per_rev);
+        count += inc_dec;
     }
 }
 
