@@ -4,6 +4,9 @@
 
 namespace sdk {
 
+/**
+ * Class representing the interface for the quad. encoder.
+ */
 class quad_encoder {
 public:
 
