@@ -24,11 +24,17 @@ public:
     {
     }
 
-    void set_target_angle(float new_target);
+    void set_target_degrees(float new_target);
+
+    /** Recalculates motor power */
+    void update_motor_power(float dt);
 
 private:
-    float current_target;
+    float target_degrees;
     float p, i, d;
+
+    float integral_error;
+    float last_error;
 
     motor target_motor;
     quad_encoder encoder;

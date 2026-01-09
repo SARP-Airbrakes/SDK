@@ -10,7 +10,8 @@ namespace sdk {
 class motor {
 public:
 
-    
+    /** Takes a power level [-1,1] */
+    float set_power(float power);
 };
 
 } // namespace sdk
