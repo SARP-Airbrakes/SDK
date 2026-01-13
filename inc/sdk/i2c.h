@@ -5,6 +5,8 @@
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_i2c.h"
 
+#include <FreeRTOS.h>
+#include <task.h>
 #include <sdk/scoped_lock.h>
 
 namespace sdk {
@@ -26,11 +28,20 @@ public:
 
 public:
 
+    /** get a sdk::i2c_master object associated with a handle */
+    static i2c_master *from_handle(I2C_HandleTypeDef *handle);
+
     /**
      * Creates a new `i2c_master` class from a given I2C HAL handle.
      */
-    i2c_master(I2C_HandleTypeDef *handle) : handle(handle)
+    i2c_master(I2C_HandleTypeDef *handle) : blocked_task(nullptr), handle(handle)
     {
+        /*
+         * this is completely evil but since there is no userdata field of the
+         * handle we can store some data in some unused field (hdmatx for
+         * example). stores *this for callbacks
+         */
+        handle->hdmatx = (DMA_HandleTypeDef *) this;
     }
 
     /**
@@ -55,8 +66,11 @@ public:
     status write(uint16_t device_address, uint16_t reg_address, uint8_t *data,
             uint16_t data_size, bool mem_16bit);
 
+    void unblock_from_isr();
+
 private:
 
+    TaskHandle_t blocked_task;
     I2C_HandleTypeDef *handle;
     mutex interface_mutex;
 };
