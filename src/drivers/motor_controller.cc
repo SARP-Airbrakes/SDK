@@ -3,12 +3,22 @@
 
 namespace sdk {
 
+void motor_controller::start()
+{
+    target_motor.start();
+}
+
+void motor_controller::stop()
+{
+    target_motor.stop();
+}
+
 void motor_controller::set_target_degrees(float new_target)
 {
     target_degrees = new_target;
 }
 
-void motor_controller::update_motor_power(float dt)
+void motor_controller::update_motor(float dt)
 {
     float curr_degrees = encoder.get_degrees();
     float error = curr_degrees - target_degrees;

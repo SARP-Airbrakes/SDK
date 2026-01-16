@@ -13,12 +13,13 @@ project(airbrakes_sdk
 )
 
 add_library(airbrakes_sdk OBJECT
-    src/drivers/motor.cc
+    src/drivers/drv8701.cc
     src/drivers/motor_controller.cc
     src/drivers/quad_encoder.cc
     src/drivers/w25q16jv.cc
     src/i2c_stm.cc
     src/mutex_rtos.cc
+    src/pwm.cc
     src/spi_stm.cc
     src/unique_pin_stm.cc
 )

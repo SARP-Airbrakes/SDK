@@ -2,7 +2,7 @@
 #ifndef AIRBRAKES_SDK_MOTOR_CONTROLLER_H_
 #define AIRBRAKES_SDK_MOTOR_CONTROLLER_H_
 
-#include <sdk/drivers/motor.h>
+#include <sdk/drivers/drv8701.h>
 #include <sdk/drivers/quad_encoder.h>
 
 #include <utility>
@@ -17,17 +17,21 @@ class motor_controller {
 public:
     motor_controller(
         float p, float i, float d,
-        motor &&motor,
+        drv8701 &&motor,
         quad_encoder &&encoder
     ) : p(p), i(i), d(d), target_motor(std::move(motor)),
             encoder(std::move(encoder))
     {
     }
 
+    void start();
+    void stop();
+
+    /** Sets target degrees */
     void set_target_degrees(float new_target);
 
-    /** Recalculates motor power */
-    void update_motor_power(float dt);
+    /** Recalculates motor power. Thread-safe blocking. */
+    void update_motor(float dt);
 
 private:
     float target_degrees;
@@ -36,7 +40,7 @@ private:
     float integral_error;
     float last_error;
 
-    motor target_motor;
+    drv8701 target_motor;
     quad_encoder encoder;
     
 };
