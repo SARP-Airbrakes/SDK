@@ -40,6 +40,20 @@ bmi088::state bmi088::copy_state()
     return internal_state;
 }
 
+static uint8_t get_range_multiplier(bmi088::acc_range range)
+{
+    switch (range) {
+    case bmi088::acc_range::RANGE_3G:
+        return 3;
+    case bmi088::acc_range::RANGE_6G:
+        return 6;
+    case bmi088::acc_range::RANGE_12G:
+        return 12;
+    case bmi088::acc_range::RANGE_24G:
+        return 24;
+    }
+}
+
 bool bmi088::fetch_acc_data(state &out)
 {
     uint8_t data_frame[6];
@@ -53,11 +67,17 @@ bool bmi088::fetch_acc_data(state &out)
     if (status != i2c_master::status::OK) {
         return false;
     }
-    uint16_t accel_x = (data_frame[1] << 8) | data_frame[0];
-    uint16_t accel_y = (data_frame[3] << 8) | data_frame[2];
-    uint16_t accel_z = (data_frame[5] << 8) | data_frame[4];
+    int16_t accel_x = (data_frame[1] << 8) | data_frame[0];
+    int16_t accel_y = (data_frame[3] << 8) | data_frame[2];
+    int16_t accel_z = (data_frame[5] << 8) | data_frame[4];
+
+    uint8_t range = get_range_multiplier(curr_range);
     
     /* see 5.3.4 */
+    out.acceleration_ms2.x = (GRAVITY_EARTH * (real)accel_x * range) / 32768.0f;
+    out.acceleration_ms2.y = (GRAVITY_EARTH * (real)accel_y * range) / 32768.0f;
+    out.acceleration_ms2.z = (GRAVITY_EARTH * (real)accel_z * range) / 32768.0f;
+    return true;
 }
 
 bool bmi088::fetch_data(state &out)

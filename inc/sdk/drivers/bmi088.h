@@ -20,6 +20,16 @@ public:
     static constexpr int ACC_CHIP_ID_ADDR = 0x00;
     static constexpr int ACC_X_LSB_ADDR = 0x12;
 
+    static constexpr float GRAVITY_EARTH = 9.80665f;
+
+    enum class acc_range : uint8_t {
+        RANGE_3G = 0x00,
+        RANGE_6G = 0x01,
+        RANGE_12G = 0x02,
+        RANGE_24G = 0x03,
+    };
+
+public:
     using real = float;
 
     struct vec3 {
@@ -56,6 +66,7 @@ private:
     bool fetch_data(state &out);
 
     sdk::i2c_master &i2c;
+    acc_range curr_range;
     state internal_state;
     mutex state_mutex;   
 };
