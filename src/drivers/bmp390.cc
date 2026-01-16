@@ -5,6 +5,16 @@
 
 namespace sdk {
 
+bool bmp390::is_connected()
+{
+    uint8_t chip_id = 0;
+    auto status = i2c.read(SLAVE_ADDRESS << 1, CHIP_ID_ADDR, &chip_id, 1, false);
+    if (status != i2c_master::status::OK) {
+        return false;
+    }
+    return (chip_id & 0xf0) == CHIP_ID_FIXED; /* chip_id_fixed <4:7> */
+}
+
 void bmp390::read_calibration_data()
 {
     uint8_t reg_data[21];

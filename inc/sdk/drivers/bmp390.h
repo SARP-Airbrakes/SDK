@@ -13,7 +13,7 @@ namespace sdk {
 class bmp390 {
 public:
     static constexpr int SLAVE_ADDRESS = 0x76;
-    static constexpr int CHIP_ID = 0x00;
+    static constexpr int CHIP_ID_FIXED = 0x60;
 
     static constexpr int CHIP_ID_ADDR = 0x00;
     static constexpr int DATA_0_ADDR = 0x04;
@@ -35,6 +35,9 @@ public:
     bmp390(i2c_master &i2c) : i2c(i2c)
     {
     }
+
+    /** Gets if this chip is connected. Thread-safe blocking. */
+    bool is_connected();
 
     /**
      * Reads the calibration data from the chip. Thread-safe blocking.
