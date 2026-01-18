@@ -27,6 +27,8 @@ public:
     void toggle();
     bool read();
 
+    uint16_t get_pin() const { return pin; }
+
 private:
     GPIO_TypeDef *gpio;
     uint16_t pin;
