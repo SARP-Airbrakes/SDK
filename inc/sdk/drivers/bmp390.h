@@ -24,6 +24,11 @@ public:
     using real = float;
     using data_frame = uint8_t[8];
 
+    enum class error {
+        OK,
+        I2C
+    };
+
     /** Driver state */
     struct state {
         real temperature_celsius;
@@ -37,24 +42,24 @@ public:
     }
 
     /** Gets if this chip is connected. Thread-safe blocking. */
-    bool is_connected();
+    result<bool, error> is_connected();
 
     /**
      * Reads the calibration data from the chip. Thread-safe blocking.
      */
-    void read_calibration_data();
+    success<error> read_calibration_data();
 
     /**
      * Updates internal driver state with new data received from the chip.
      * Thread-safe blocking.
      */
-    void update();
+    success<error> update();
 
     /**
      * Sets the CONFIG register with the given filter coefficient value (see
      * 4.3.21). Thread-safe blocking.
      */
-    void set_config(uint8_t filter_coefficient);
+    success<error> set_config(uint8_t filter_coefficient);
 
     state copy_state(); /* may thread-safe block */
 
@@ -88,7 +93,7 @@ private:
     /* gets the pressure from a data frame (in pascals) */
     real compensate_pressure(real temperature_celsius, data_frame frame);
     
-    bool fetch_data(state &out);
+    result<state, error> fetch_data();
 
     i2c_master &i2c;
     mutex state_mutex;

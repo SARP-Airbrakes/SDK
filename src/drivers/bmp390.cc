@@ -5,31 +5,25 @@
 
 namespace sdk {
 
-bool bmp390::is_connected()
+result<bool, bmp390::error> bmp390::is_connected()
 {
     uint8_t chip_id = 0;
     auto status = i2c.read(SLAVE_ADDRESS << 1, CHIP_ID_ADDR, &chip_id, 1, false);
-    if (status != i2c_master::status::OK) {
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     return (chip_id & 0xf0) == CHIP_ID_FIXED; /* chip_id_fixed <4:7> */
 }
 
-void bmp390::read_calibration_data()
+success<bmp390::error> bmp390::read_calibration_data()
 {
     uint8_t reg_data[21];
-    i2c_master::status status = i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         NVM_PAR_T1_ADDR,
         reg_data,
         sizeof(reg_data),
         false
     );
-
-    if (status != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
 
     /* this is derived from boschsensortec/BMP3_SensorAPI */
     uint16_t p = (reg_data[1] << 8) | reg_data[0];
@@ -61,26 +55,31 @@ void bmp390::read_calibration_data()
     p = reg_data[20];
     /* 2^65 */
     calib_data.par_p11 = ((real)p / 36893488147419103232.0f);
+    return success<error>();
 }
 
-void bmp390::update()
+success<bmp390::error> bmp390::update()
 {
-    state out;
-    bool success = fetch_data(out);
-    if (!success) {
-        /* TODO: error condition */
-        return;
-    }
+    auto result = fetch_data();
+    RESULT_UNWRAP(result);
 
     scoped_lock lock(state_mutex);
-    current_state = out;
+    current_state = result.unwrap();
+    return success<error>();
 }
 
-void bmp390::set_config(uint8_t filter_coefficient)
+success<bmp390::error> bmp390::set_config(uint8_t filter_coefficient)
 {
     uint8_t config = (filter_coefficient & 0x07) << 1;
-    i2c.write(SLAVE_ADDRESS << 1, CONFIG_ADDR, &config, sizeof(config), false);
-    /* TODO: error handling */
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        CONFIG_ADDR,
+        &config,
+        sizeof(config),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
 }
 
 bmp390::state bmp390::copy_state()
@@ -132,23 +131,24 @@ bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
     return out;
 }
 
-bool bmp390::fetch_data(state &out)
+result<bmp390::state, bmp390::error> bmp390::fetch_data()
 {
     // also reads reversed bytes
     data_frame frame;
-    if (i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         DATA_0_ADDR,
         frame,
         sizeof(data_frame),
         false
-    ) != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return false;
-    };
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+
+    state out;
     out.temperature_celsius = compensate_temperature(frame);
     out.pressure_pascals = compensate_pressure(out.temperature_celsius, frame);
-    return true;
+
+    return out;
 }
 
 } // namespace sdk

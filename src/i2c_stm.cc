@@ -12,7 +12,7 @@ i2c_master *i2c_master::from_handle(I2C_HandleTypeDef *handle)
     return (i2c_master *) handle->hdmatx;
 }
 
-i2c_master::status i2c_master::read(uint16_t device_address, uint16_t
+success<i2c_master::error> i2c_master::read(uint16_t device_address, uint16_t
         reg_address, uint8_t *data, uint16_t data_size, bool mem_16bit) 
 { 
     // make sure the address can fit
@@ -33,10 +33,10 @@ i2c_master::status i2c_master::read(uint16_t device_address, uint16_t
 
     blocked_task = xTaskGetCurrentTaskHandle();
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    return status == HAL_OK ? status::OK : status::ERROR;
+    return success<error>(status == HAL_OK ? error::OK : error::ERROR);
 }
 
-i2c_master::status i2c_master::write(uint16_t device_address, uint16_t
+success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
         reg_address, uint8_t *data, uint16_t data_size, bool mem_16bit)
 {
     // make sure the address can fit
@@ -57,7 +57,7 @@ i2c_master::status i2c_master::write(uint16_t device_address, uint16_t
 
     blocked_task = xTaskGetCurrentTaskHandle();
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    return status == HAL_OK ? status::OK : status::ERROR;
+    return success<error>(status == HAL_OK ? error::OK : error::ERROR);
 }
 
 void i2c_master::unblock_from_isr()

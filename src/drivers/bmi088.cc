@@ -1,11 +1,12 @@
 
 #include <sdk/drivers/bmi088.h>
 
+#include <sdk/result.h>
 #include <sdk/scoped_lock.h>
 
 namespace sdk {
 
-void bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
+success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
 {
     acc_range curr_range;
     acc_bwp curr_bwp;
@@ -27,10 +28,7 @@ void bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
             1,
             false
         );
-        if (status != i2c_master::status::OK) {
-            /* TODO: error condition */
-            return;
-        }
+        RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
         internal_state.acc_range = range;
     }
@@ -47,17 +45,15 @@ void bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
             1,
             false
         );
-        if (status != i2c_master::status::OK) {
-            /* TODO: error condition */
-            return;
-        }
+        RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
         internal_state.acc_bwp = bwp;
         internal_state.acc_odr = odr;
     }
+    return success<error>();
 }
 
-void bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
+success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
 {
     gyro_range curr_range;
     gyro_bw curr_bw;
@@ -76,10 +72,7 @@ void bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
             1,
             false
         );
-        if (status != i2c_master::status::OK) {
-            /* TODO: error condition */
-            return;
-        }
+        RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
         internal_state.gyro_range = range;
     }
@@ -92,16 +85,14 @@ void bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
             1,
             false
         );
-        if (status != i2c_master::status::OK) {
-            /* TODO: error condition */
-            return;
-        }
+        RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
         internal_state.gyro_bw = bw;
     }
+    return success<error>();
 }
 
-bool bmi088::is_connected()
+result<bool, bmi088::error> bmi088::is_connected()
 {
     // just check for the acc
     uint8_t acc_chip_id = 0;
@@ -112,13 +103,11 @@ bool bmi088::is_connected()
         1,
         false
     );
-    if (status != i2c_master::status::OK) {
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     return acc_chip_id == ACC_CHIP_ID;
 }
 
-void bmi088::update()
+success<bmi088::error> bmi088::update()
 {
     state out;
 
@@ -129,14 +118,13 @@ void bmi088::update()
     }
 
     // fetch relevant data
-    if (!fetch_data(out)) {
-        /* TODO: error condition */
-        return;
-    }
+    RESULT_UNWRAP(fetch_data(out));
     
     // then copy it back
     scoped_lock lock(state_mutex);
     internal_state = out;
+
+    return success<error>();
 }
 
 bmi088::state bmi088::copy_state()
@@ -179,7 +167,7 @@ static bmi088::real get_acc_range_multiplier(bmi088::acc_range range)
 }
 
 
-bool bmi088::fetch_acc_data(state &out)
+success<bmi088::error> bmi088::fetch_acc_data(state &out)
 {
     uint8_t data_frame[9];
     auto status = i2c.read(
@@ -189,10 +177,7 @@ bool bmi088::fetch_acc_data(state &out)
         sizeof(data_frame),
         false
     );
-    if (status != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     int16_t accel_x = (data_frame[1] << 8) | data_frame[0];
     int16_t accel_y = (data_frame[3] << 8) | data_frame[2];
     int16_t accel_z = (data_frame[5] << 8) | data_frame[4];
@@ -211,7 +196,7 @@ bool bmi088::fetch_acc_data(state &out)
         out.sensortime;
     out.uninitialized_sensortime = false;
     out.sensortime = sensortime;
-    return true;
+    return success<error>();
 }
 
 static bmi088::real get_gyro_range_multiplier(bmi088::gyro_range range)
@@ -230,7 +215,7 @@ static bmi088::real get_gyro_range_multiplier(bmi088::gyro_range range)
     }
 }
 
-bool bmi088::fetch_gyro_data(state &out)
+success<bmi088::error> bmi088::fetch_gyro_data(state &out)
 {
     uint8_t data_frame[6];
     auto status = i2c.read(
@@ -240,10 +225,7 @@ bool bmi088::fetch_gyro_data(state &out)
         sizeof(data_frame),
         false
     );
-    if (status != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     int16_t rate_x = (data_frame[1] << 8) | data_frame[0];
     int16_t rate_y = (data_frame[3] << 8) | data_frame[2];
     int16_t rate_z = (data_frame[5] << 8) | data_frame[4];
@@ -257,12 +239,14 @@ bool bmi088::fetch_gyro_data(state &out)
     out.orientation_deg.x += out.angular_velocity_ds.x * delta_t;
     out.orientation_deg.y += out.angular_velocity_ds.y * delta_t;
     out.orientation_deg.z += out.angular_velocity_ds.z * delta_t;
-    return true;
+    return success<error>();
 }
 
-bool bmi088::fetch_data(state &out)
+success<bmi088::error> bmi088::fetch_data(state &out)
 {
-    return fetch_acc_data(out) && fetch_gyro_data(out);
+    RESULT_UNWRAP_OR(fetch_acc_data(out), bmi088::error::ACC);
+    RESULT_UNWRAP_OR(fetch_gyro_data(out), bmi088::error::GYRO);
+    return success<error>();
 }
 
 } // namespace sdk
