@@ -2,7 +2,10 @@
 #ifndef AIRBRAKES_SDK_CDPA1616D_H_
 #define AIRBRAKES_SDK_CDPA1616D_H_
 
+#include <sdk/mutex.h>
+#include <sdk/queue.h>
 #include <sdk/uart.h>
+
 #include <utility>
 
 namespace sdk {
@@ -35,6 +38,7 @@ public:
     enum class error {
         OK,
         UART,
+        INVALID_COMMAND
     };
 
 public:
@@ -44,13 +48,29 @@ public:
     }
 
     /**
-     * Update internal driver state. Thread-safe blocking.
+     * Sets sensible default configurations (blocks the thread), then starts
+     * reading from the UART (non-blocking).
+     */
+    success<error> start();
+
+    /**
+     * Update internal driver state, blocks until it receives another command.
+     * Thread-safe blocking.
      */
     success<error> update();
 
+    /**
+     * Copies the internal state. May thread-safe block.
+     */
+    state copy_state();
+
 private:
 
-    sdk::uart_buffered uart;
+    success<error> process_command(const char *str);
+
+    state internal_state;
+    mutex state_mutex;
+    uart_buffered uart;
 };
 
 } // namespace sdk

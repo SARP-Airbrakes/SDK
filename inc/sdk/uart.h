@@ -18,13 +18,15 @@ namespace sdk {
  */
 class uart_buffered { 
 public: 
-    static constexpr int BUFFER_SIZE = 256;
+    // ridiculously big for gps driver, see drivers/cdpa1616d.cc
+    static constexpr int BUFFER_SIZE = 1024;
 
     enum class error {
         OK,
         FAIL,
         FULL,
         WAITING,
+        BUSY,
     };
 
     enum class state {
@@ -56,10 +58,21 @@ public:
     uart_buffered &operator=(const uart_buffered &) = delete;
 
     /**
+     * Sets the baud rate of the UART interface.
+     */
+    success<error> set_baud(uint32_t baud);
+
+    /**
      * Starts listening to the UART. Initiates a non-blocking read that will be
      * read to the buffer.
      */
     success<error> read();
+
+    /**
+     * Transmits data through the UART. Thread-safe blocking until transmit
+     * completion.
+     */
+    success<error> transmit(const uint8_t *data, size_t data_size);
 
     /**
      * Stops the UART after reading the next byte.
@@ -67,20 +80,30 @@ public:
     void stop();
 
     /**
-     * To be called from an interrupt after receiving one byte.
+     * To be called from an interrupt after successfully receiving.
      */
-    void receive();
+    void receive_complete();
 
     /**
-     * Wait for a specific byte to be transmitted (e.g. '\n', '\r'). Thread-safe
-     * blocking. Only one FreeRTOS task can wait at a time. Returns the size of
-     * the data frame that includes the byte.
+     * To be called from an interrupt after a transmission is completed.
      */
-    result<size_t, error> await(uint8_t byte);
+    void transmit_complete();
 
     /**
-     * Moves up to `size` bytes from the buffer to the given `buf`. Clears space
-     * in the circular buffer.
+     * Returns true if the internal buffer is full.
+     */
+    bool is_full();
+
+    /**
+     * Finds a data frame that ends with the given byte, or waits until the byte
+     * is received. Thread-safe blocking. Only one FreeRTOS task can wait at a
+     * time. Returns the size of the data frame that includes the byte.
+     */
+    result<size_t, error> next(uint8_t byte);
+
+    /**
+     * Moves up to `size` bytes from start of the internal buffer to the given
+     * `buf`. Clears space in the buffer.
      */
     success<error> move(uint8_t *buf, size_t size);
 
@@ -89,7 +112,7 @@ private:
     TaskHandle_t blocked_task;
     uint8_t target_byte;
 
-    state reader_state;
+    state uart_state;
     
     size_t await_size = 0;
     size_t read_index = 0;
