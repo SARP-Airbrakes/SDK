@@ -49,6 +49,41 @@ cdpa1616d::state cdpa1616d::copy_state()
     return internal_state;
 }
 
+static void process_utc(cdpa1616d::real utc, cdpa1616d::state &state)
+{
+    state.utc_hours = (uint8_t) utc / 10000;
+    state.utc_minutes = (uint8_t) (utc - state.utc_hours * 10000) / 100;
+    state.utc_seconds = utc - state.utc_hours * 10000 - state.utc_minutes * 100;
+}
+
+success<cdpa1616d::error> cdpa1616d::process_gga(const char *str)
+{
+    int num;
+    real utc = NAN;
+    real msl_altitude = 0;
+
+    // ignore everything else other than altitude and time
+    num = sscanf(
+        &str[3], // skip first "$GN"
+        "GGA,%f,%*f,%*c,%*f,%*c,%*d,%*d,%*f,%f",
+        &utc,
+        &msl_altitude
+    );
+    
+    if (num == EOF || num != 2)
+        return error::INVALID_COMMAND;
+
+    scoped_lock lock(state_mutex);
+    process_utc(utc, internal_state);
+    return success<error>();
+
+}
+
+success<cdpa1616d::error> cdpa1616d::process_rmc(const char *str)
+{
+
+}
+
 success<cdpa1616d::error> cdpa1616d::process_command(
     const char *str)
 {
@@ -56,29 +91,7 @@ success<cdpa1616d::error> cdpa1616d::process_command(
     case 'G': // GPGGA, GPGSA, GPGSV
         switch (str[4]) {
         case 'G': // GPGGA
-            int num;
-            float utc;
-            float latitude;
-            char ns_indicator;
-            float longitude;
-            char ew_indicator;
-
-            utc = NAN;
-            latitude = NAN;
-            ns_indicator = 0;
-            longitude = NAN;
-            ew_indicator = 0;
-
-            num = sscanf(
-                &str[3], // skip first "$GN"
-                "GGA,%f,%f,%c,%f,%c",
-                &utc,
-                &latitude,
-                &ns_indicator,
-                &longitude,
-                &ew_indicator
-            );
-            return success<error>();
+            return process_gga(str);
         case 'S': // GPGSA, GPGSV
             switch (str[5]) {
             case 'A': // GPGSA

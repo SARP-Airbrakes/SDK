@@ -28,10 +28,11 @@ public:
     };
 
     struct state {
-        real latitude_degrees;
-        cardinals north_south;
-        real longitude_degrees;
-        cardinals east_west;
+        /* between 0-23 */
+        uint8_t utc_hours;
+        /* between 0-59 */
+        uint8_t utc_minutes;
+        real utc_seconds;
         real altitude_meters;
     };
 
@@ -65,6 +66,10 @@ public:
     state copy_state();
 
 private:
+
+    // nmea command processing
+    success<error> process_gga(const char *str);
+    success<error> process_rmc(const char *str);
 
     success<error> process_command(const char *str);
 
