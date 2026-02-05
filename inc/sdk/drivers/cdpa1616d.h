@@ -27,6 +27,12 @@ public:
         WEST,
     };
 
+    enum class gps_fix {
+        NO_FIX, /* no altitude, long lat data */
+        GPS_FIX, /* at least 3? */
+        DIFF_GPS_FIX,
+    };
+
     struct state {
         /* between 0-23 */
         uint8_t utc_hours;
