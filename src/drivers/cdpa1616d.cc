@@ -61,27 +61,62 @@ success<cdpa1616d::error> cdpa1616d::process_gga(const char *str)
     int num;
     real utc = NAN;
     real msl_altitude = 0;
+    int fix_indicator = 0;
 
-    // ignore everything else other than altitude and time
+    // see Table 3
     num = sscanf(
         &str[3], // skip first "$GN"
-        "GGA,%f,%*f,%*c,%*f,%*c,%*d,%*d,%*f,%f",
+        "GGA,%f,%*f,%*c,%*f,%*c,%d,%*d,%*f,%f",
         &utc,
+        &fix_indicator,
         &msl_altitude
     );
-    
-    if (num == EOF || num != 2)
+
+    if (num == EOF)
         return error::INVALID_COMMAND;
 
     scoped_lock lock(state_mutex);
     process_utc(utc, internal_state);
-    return success<error>();
+    internal_state.altitude_meters = msl_altitude;
 
+    if (fix_indicator == 1) {
+        internal_state.fixed = gps_fix::GPS_FIX;
+    } else if (fix_indicator == 2) {
+        internal_state.fixed = gps_fix::DIFF_GPS_FIX;
+    } else { // assume no fix
+        internal_state.fixed = gps_fix::NO_FIX;
+    }
+
+    return success<error>();
 }
 
 success<cdpa1616d::error> cdpa1616d::process_rmc(const char *str)
 {
+    int num;
+    real utc = NAN;
+    char status = 0;
+    real sog_knots = 0;
+    real cog_degrees = 0;
 
+    // see Table 11
+    num = sscanf(
+        &str[3], // skip first "$GN",
+        "RMC,%f,%c,%*f,%*c,%*f,%*c,%f,%f",
+        &utc,
+        &status,
+        &sog_knots,
+        &cog_degrees
+    );
+
+    if (num == EOF)
+        return error::INVALID_COMMAND;
+    
+    scoped_lock lock(state_mutex);
+    process_utc(utc, internal_state);
+    internal_state.data_valid = status == 'A';
+    internal_state.speed_over_ground_knots = sog_knots;
+    internal_state.course_over_ground_degrees = cog_degrees;
+    return success<error>();
 }
 
 success<cdpa1616d::error> cdpa1616d::process_command(
@@ -105,7 +140,7 @@ success<cdpa1616d::error> cdpa1616d::process_command(
         }
         return error::INVALID_COMMAND;
     case 'R': // GPRMC
-        return success<error>();
+        return process_rmc(str);
     case 'V': // GPVTG
         /* ignored */
         return success<error>();

@@ -3,6 +3,7 @@
 #define AIRBRAKES_SDK_UART_H_
 
 #include <stm32f4xx_hal.h>
+#include <stm32f4xx_hal_uart.h>
 #include <sdk/result.h>
 
 #include <FreeRTOS.h>

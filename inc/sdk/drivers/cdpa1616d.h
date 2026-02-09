@@ -28,9 +28,9 @@ public:
     };
 
     enum class gps_fix {
-        NO_FIX, /* no altitude, long lat data */
-        GPS_FIX, /* at least 3? */
-        DIFF_GPS_FIX,
+        NO_FIX, /* no data */
+        GPS_FIX, /* low accuracy data */
+        DIFF_GPS_FIX, /* high accuracy data */
     };
 
     struct state {
@@ -38,8 +38,15 @@ public:
         uint8_t utc_hours;
         /* between 0-59 */
         uint8_t utc_minutes;
+
+        bool data_valid;
+
+        /* between 0.000-59.999 */
         real utc_seconds;
         real altitude_meters;
+        real speed_over_ground_knots;
+        real course_over_ground_degrees;
+        gps_fix fixed;
     };
 
     enum class error {
