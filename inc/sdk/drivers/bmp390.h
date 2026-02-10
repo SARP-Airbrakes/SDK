@@ -26,6 +26,8 @@ public:
     using real = float;
     using data_frame = uint8_t[8];
 
+    static constexpr real SEA_LEVEL_PRESSURE_PASCALS = 101325;
+
     enum class osr : uint8_t {
         OSR_1 = 0x00,
         OSR_2 = 0x01,
@@ -65,6 +67,7 @@ public:
     struct state {
         real temperature_celsius;
         real pressure_pascals;
+        real altitude_meters;
     };
     
 public:
@@ -136,6 +139,8 @@ private:
     real compensate_temperature(data_frame frame);
     /* gets the pressure from a data frame (in pascals) */
     real compensate_pressure(real temperature_celsius, data_frame frame);
+    /* estimates the altitude using the barometric equation */
+    real estimate_altitude(real pressure_pascals);
     
     result<state, error> fetch_data();
 

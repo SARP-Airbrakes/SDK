@@ -1,7 +1,8 @@
 
 #include <sdk/drivers/bmp390.h>
-
 #include <sdk/scoped_lock.h>
+
+#include <cmath>
 
 namespace sdk {
 
@@ -166,6 +167,19 @@ bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
     return out;
 }
 
+bmp390::real bmp390::estimate_altitude(real pressure_pascals)
+{
+    // this is from the BMP180 driver datasheet (see section 3.6). The equation
+    // is labeled as the "international barometric equation". It's really just
+    // the barometric equation (see Wikipedia or whatever) re-arranged, assuming
+    // a isothermal temp. of 15 deg C.
+    
+    // TODO: Ideally, we would also use the temperature reading: hypsometric
+    // equation to also include temperature reading?
+    real out = 1.0f - powf(pressure_pascals / SEA_LEVEL_PRESSURE_PASCALS, 1.0f / 5.255f);
+    return 44330.0f * out;
+}
+
 result<bmp390::state, bmp390::error> bmp390::fetch_data()
 {
     // also reads reversed bytes
@@ -182,6 +196,7 @@ result<bmp390::state, bmp390::error> bmp390::fetch_data()
     state out;
     out.temperature_celsius = compensate_temperature(frame);
     out.pressure_pascals = compensate_pressure(out.temperature_celsius, frame);
+    out.altitude_meters = estimate_altitude(out.pressure_pascals);
 
     return out;
 }
