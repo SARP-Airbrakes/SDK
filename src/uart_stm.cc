@@ -45,14 +45,16 @@ success<uart_buffered::error> uart_buffered::read()
 success<uart_buffered::error> uart_buffered::transmit(const uint8_t *data,
         size_t data_size)
 {
-    if (uart_state != state::IDLE)
+    if (interface_signal.is_full() || uart_state != state::IDLE)
         return error::BUSY;
 
+    uart_state = state::WRITING;
     auto status = HAL_UART_Transmit_IT(handle, data, data_size);
 
     // block current thread
-    blocked_task = xTaskGetCurrentTaskHandle();
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
+
+    uart_state = state::IDLE;
 
     return status != HAL_OK ? error::FAIL : error::OK;
 }
@@ -64,7 +66,7 @@ void uart_buffered::stop()
     }
 }
 
-void uart_buffered::receive_complete() 
+void uart_buffered::receive_complete_from_isr() 
 {
     if (uart_state == state::READING) {
         // if there is space in the buffer
@@ -80,39 +82,26 @@ void uart_buffered::receive_complete()
             write_index = (write_index + 1) % BUFFER_SIZE;
             await_size += 1;
 
-            if (blocked_task != nullptr && received_byte == target_byte) {
-                BaseType_t task_woken;
-                vTaskNotifyGiveFromISR(blocked_task, &task_woken);
-                blocked_task = nullptr;
-                portYIELD_FROM_ISR(task_woken);
-            }
+            if (interface_signal.is_full() && received_byte == target_byte)
+                interface_signal.unblock_from_isr();
         } else {
             uart_state = state::FULL;
         }
     } else if (uart_state == state::STOPPING) {
         uart_state = state::IDLE;
 
-        // unblock a blocked task when stopping
-        if (blocked_task != nullptr) {
-            BaseType_t task_woken;
-            vTaskNotifyGiveFromISR(blocked_task, &task_woken);
-            blocked_task = nullptr;
-            portYIELD_FROM_ISR(task_woken);
-        }
+        // make sure we aren't blocking anything
+        if (interface_signal.is_full()) 
+            interface_signal.unblock_from_isr();
     }
 }
 
-void uart_buffered::transmit_complete()
+void uart_buffered::transmit_complete_from_isr()
 {
     uart_state = state::IDLE;
 
-    // unblocked the associated blocked task
-    if (blocked_task != nullptr) {
-        BaseType_t task_woken;
-        vTaskNotifyGiveFromISR(blocked_task, &task_woken);
-        blocked_task = nullptr;
-        portYIELD_FROM_ISR(task_woken);
-    }
+    if (interface_signal.is_full()) 
+        interface_signal.unblock_from_isr();
 }
 
 bool uart_buffered::is_full()
@@ -122,8 +111,8 @@ bool uart_buffered::is_full()
 
 result<size_t, uart_buffered::error> uart_buffered::next(uint8_t byte)
 {
-    if (blocked_task != nullptr)
-        return error::WAITING;
+    if (interface_signal.is_full())
+        return error::BUSY;
 
     // check if we don't have to block
     for (size_t i = 0; read_index != write_index; read_index = (read_index + 1) % BUFFER_SIZE) {
@@ -134,8 +123,9 @@ result<size_t, uart_buffered::error> uart_buffered::next(uint8_t byte)
 
     // else, block
     target_byte = byte;
-    blocked_task = xTaskGetCurrentTaskHandle();
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    // block current thread
+    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
     
     size_t out = await_size;
     await_size = 0;

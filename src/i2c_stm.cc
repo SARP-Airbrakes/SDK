@@ -15,6 +15,9 @@ i2c_master *i2c_master::from_handle(I2C_HandleTypeDef *handle)
 success<i2c_master::error> i2c_master::read(uint16_t device_address, uint16_t
         reg_address, uint8_t *data, uint16_t data_size, bool mem_16bit) 
 { 
+    if (interface_signal.is_full())
+        return error::BUSY;
+
     // make sure the address can fit
     if (!mem_16bit)
         reg_address &= 0xff;
@@ -31,14 +34,16 @@ success<i2c_master::error> i2c_master::read(uint16_t device_address, uint16_t
         data_size
     );
 
-    blocked_task = xTaskGetCurrentTaskHandle();
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
     return success<error>(status == HAL_OK ? error::OK : error::ERROR);
 }
 
 success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
         reg_address, uint8_t *data, uint16_t data_size, bool mem_16bit)
 {
+    if (interface_signal.is_full())
+        return error::BUSY;
+
     // make sure the address can fit
     if (!mem_16bit)
         reg_address &= 0xff;
@@ -55,21 +60,13 @@ success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
         data_size
     );
 
-    blocked_task = xTaskGetCurrentTaskHandle();
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
     return success<error>(status == HAL_OK ? error::OK : error::ERROR);
 }
 
 void i2c_master::unblock_from_isr()
 {
-    if (blocked_task == nullptr) {
-        /* TODO: this is an error condition! */
-        return;
-    }
-    BaseType_t task_woken;
-    vTaskNotifyGiveFromISR(blocked_task, &task_woken);
-    blocked_task = nullptr;
-    portYIELD_FROM_ISR(task_woken);
+    interface_signal.unblock_from_isr();
 }
 
 } // namespace sdk

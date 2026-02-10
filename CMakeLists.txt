@@ -23,7 +23,9 @@ add_library(airbrakes_sdk OBJECT
     src/i2c_stm.cc
     src/mutex_rtos.cc
     src/pwm.cc
+    src/signal_rtos.cc
     src/spi_stm.cc
+    src/uart_stm.cc
     src/unique_pin_stm.cc
 )
 

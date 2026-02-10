@@ -4,10 +4,9 @@
 
 #include <stm32f4xx_hal.h>
 #include <stm32f4xx_hal_uart.h>
-#include <sdk/result.h>
 
-#include <FreeRTOS.h>
-#include <task.h>
+#include <sdk/result.h>
+#include <sdk/signal.h>
 
 namespace sdk {
 
@@ -26,13 +25,13 @@ public:
         OK,
         FAIL,
         FULL,
-        WAITING,
         BUSY,
     };
 
     enum class state {
         IDLE,
         READING,
+        WRITING,
         FULL,
         STOPPING
     };
@@ -83,12 +82,12 @@ public:
     /**
      * To be called from an interrupt after successfully receiving.
      */
-    void receive_complete();
+    void receive_complete_from_isr();
 
     /**
      * To be called from an interrupt after a transmission is completed.
      */
-    void transmit_complete();
+    void transmit_complete_from_isr();
 
     /**
      * Returns true if the internal buffer is full.
@@ -110,11 +109,11 @@ public:
 
 private:
     UART_HandleTypeDef *handle;
-    TaskHandle_t blocked_task;
-    uint8_t target_byte;
 
     state uart_state;
-    
+    signal interface_signal;
+
+    uint8_t target_byte;
     size_t await_size = 0;
     size_t read_index = 0;
     size_t write_index = 0;
