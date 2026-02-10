@@ -17,12 +17,44 @@ public:
 
     static constexpr int CHIP_ID_ADDR = 0x00;
     static constexpr int DATA_0_ADDR = 0x04;
+    static constexpr int OSR_ADDR = 0x1C;
+    static constexpr int ODR_ADDR = 0x1D;
     static constexpr int CONFIG_ADDR = 0x1F;
     static constexpr int NVM_PAR_T1_ADDR = 0x31;
 
     /* this might be too low precision */
     using real = float;
     using data_frame = uint8_t[8];
+
+    enum class osr : uint8_t {
+        OSR_1 = 0x00,
+        OSR_2 = 0x01,
+        OSR_4 = 0x02,
+        OSR_8 = 0x03,
+        OSR_16 = 0x04,
+        OSR_32 = 0x05,
+    };
+
+    enum class odr : uint8_t {
+        ODR_200 = 0x00,
+        ODR_100 = 0x01,
+        ODR_50 = 0x02,
+        ODR_25 = 0x03,
+        ODR_12_5 = 0x04,
+        ODR_6_25 = 0x05,
+        ODR_3_1 = 0x06,
+        ODR_1_5 = 0x07,
+        ODR_0_78 = 0x08,
+        ODR_0_39 = 0x09,
+        ODR_0_2 = 0x0a,
+        ODR_0_1 = 0x0b,
+        ODR_0_05 = 0x0c,
+        ODR_0_02 = 0x0d,
+        ODR_0_01 = 0x0e,
+        ODR_0_006 = 0x0f,
+        ODR_0_003 = 0x10,
+        ODR_0_0015 = 0x11,
+    };
 
     enum class error {
         OK,
@@ -60,6 +92,18 @@ public:
      * 4.3.21). Thread-safe blocking.
      */
     success<error> set_config(uint8_t filter_coefficient);
+
+    /**
+     * Sets the OSR register with the given oversampling rate values (see
+     * 4.3.18). Thread-safe blocking.
+     */
+    success<error> set_osr(osr pressure, osr temperature);
+
+    /**
+     * Sets the ODR register with the given output data rate (see 4.3.19 and
+     * 4.3.20). Thread-safe blocking.
+     */
+    success<error> set_odr(odr rate);
 
     state copy_state(); /* may thread-safe block */
 

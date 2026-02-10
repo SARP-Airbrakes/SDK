@@ -82,6 +82,41 @@ success<bmp390::error> bmp390::set_config(uint8_t filter_coefficient)
     return success<error>();
 }
 
+success<bmp390::error> bmp390::set_osr(osr pressure, osr temperature)
+{
+    uint8_t out = 0;
+    out |= ((uint8_t) pressure) & 0x07;
+    out |= (((uint8_t) temperature) & 0x07) << 3;
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        OSR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_odr(odr rate) 
+{
+    uint8_t out = ((uint8_t) rate) & 0x1f;
+
+    // clamp the written value
+    if (out > (uint8_t) bmp390::odr::ODR_0_0015)
+        out = (uint8_t) bmp390::odr::ODR_0_0015;
+
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        ODR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
 bmp390::state bmp390::copy_state()
 {
     // scope is dropped on return
