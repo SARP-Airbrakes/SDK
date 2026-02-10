@@ -25,6 +25,12 @@ public:
         pin.write(after);
     }
 
+    // move only semantics
+    scoped_pin(const scoped_pin &) = delete;
+    scoped_pin(scoped_pin &&) = default;
+    scoped_pin &operator=(const scoped_pin &) = delete;
+    scoped_pin &operator=(scoped_pin &&) = delete;
+
 private:
     unique_pin &pin;
     bool after;

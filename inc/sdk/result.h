@@ -3,7 +3,7 @@
 #define AIRBRAKES_SDK_RESULT_H_
 
 /* passes the error upward, works for result and success */
-#define RESULT_UNWRAP(x) auto memo = (x); if (!memo.is_ok()) { return memo; }
+#define RESULT_UNWRAP(x) { auto memo = (x); if (!memo.is_ok()) return memo; }
 
 /* instead, pass another error */
 #define RESULT_UNWRAP_OR(x, err) if (!x.is_ok()) { return err; }
