@@ -1,11 +1,11 @@
 
-#include <sdk/drivers/w25q16jv.h>
+#include <sdk/drivers/w25q128jv.h>
 
 #include <cstring>
 
 namespace sdk {
 
-void w25q16jv::update()
+void w25q128jv::update()
 {
     while (!write_queue.is_empty()) {
         write_command command = write_queue.pop();
@@ -14,7 +14,7 @@ void w25q16jv::update()
     }
 }
 
-void w25q16jv::queue_write(uint32_t address, const uint8_t *data, uint32_t data_size)
+void w25q128jv::write(uint32_t address, const uint8_t *data, uint32_t data_size)
 {
     // copy data before sending it to the driver thread
     uint8_t *data_copy = (uint8_t *) pvPortMalloc(data_size);
@@ -25,7 +25,7 @@ void w25q16jv::queue_write(uint32_t address, const uint8_t *data, uint32_t data_
     write_queue.push_back(command);
 }
 
-void w25q16jv::write(uint32_t address, uint8_t *data, uint32_t data_size)
+void w25q128jv::write(uint32_t address, uint8_t *data, uint32_t data_size)
 {
     uint8_t cmd[4];
     cmd[0] = PAGE_PROGRAM_COMMAND;
@@ -45,7 +45,7 @@ void w25q16jv::write(uint32_t address, uint8_t *data, uint32_t data_size)
     disable_chip();
 }
 
-void w25q16jv::enable_write()
+void w25q128jv::enable_write()
 {
     uint8_t cmd[1];
     cmd[0] = WRITE_ENABLE_COMMAND;
@@ -58,12 +58,12 @@ void w25q16jv::enable_write()
     disable_chip();
 }
 
-void w25q16jv::enable_chip()
+void w25q128jv::enable_chip()
 {
     pin.write(0); // drive cs low
 }
 
-void w25q16jv::disable_chip()
+void w25q128jv::disable_chip()
 {
     pin.write(1); // drive cs high
 }
