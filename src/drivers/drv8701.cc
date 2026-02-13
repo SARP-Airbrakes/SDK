@@ -19,21 +19,21 @@ void drv8701::stop()
 
 void drv8701::set_power(real power)
 {
-    if (power < 0) {
+    if (power < -epsilon) {
         sh1.write(false);
         sh2.write(true);
         in1.set(0);
         in2.set(-power);
-    } else if (power > 0) {
+    } else if (power > epsilon) {
         sh1.write(true);
         sh2.write(false);
         in1.set(power);
         in2.set(0);
-    } else { // assume coast
+    } else { // assume brake
         sh1.write(false);
         sh2.write(false);
-        in1.set(0);
-        in2.set(0);
+        in1.set(1);
+        in2.set(1);
     }
 }
 

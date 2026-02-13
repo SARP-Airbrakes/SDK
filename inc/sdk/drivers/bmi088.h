@@ -4,6 +4,7 @@
 
 #include <sdk/i2c.h>
 #include <sdk/mutex.h>
+#include <sdk/result.h>
 
 namespace sdk {
 
@@ -75,6 +76,13 @@ public:
         BW_32HZ = 0x07, /* BW: 32Hz, ODR: 100Hz */
     };
 
+    enum class error {
+        OK,
+        I2C,
+        ACC,
+        GYRO,
+    };
+
     using real = float;
 
     /* seconds per sensortime lsb */
@@ -114,17 +122,17 @@ public:
     void stop();
 
     /** Sets the configuration of the accelerometer. Thread-safe blocking. */
-    void set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr);
+    success<error> set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr);
     /** Sets the configuration of the gyroscope. Thread-safe blocking. */
-    void set_gyro_config(gyro_range range, gyro_bw bw);
+    success<error> set_gyro_config(gyro_range range, gyro_bw bw);
 
     /** Gets if this chip is connected. Thread-safe blocking. */
-    bool is_connected();
+    result<bool, error> is_connected();
 
     /**
      * Updates internal driver state. Thread-safe blocking.
      */
-    void update();
+    success<error> update();
 
     /**
      * Copies the internal driver state for use in a control loop. May thread-safe
@@ -138,9 +146,9 @@ private:
     /** Gets the difference (in s) between two sensortimes. */
     real get_delta_t(uint32_t last_sensortime, uint32_t sensortime);
 
-    bool fetch_acc_data(state &out);
-    bool fetch_gyro_data(state &out);
-    bool fetch_data(state &out);
+    success<error> fetch_acc_data(state &out);
+    success<error> fetch_gyro_data(state &out);
+    success<error> fetch_data(state &out);
 
     sdk::i2c_master &i2c;
 

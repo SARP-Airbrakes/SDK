@@ -1,35 +1,30 @@
 
 #include <sdk/drivers/bmp390.h>
-
 #include <sdk/scoped_lock.h>
+
+#include <cmath>
 
 namespace sdk {
 
-bool bmp390::is_connected()
+result<bool, bmp390::error> bmp390::is_connected()
 {
     uint8_t chip_id = 0;
     auto status = i2c.read(SLAVE_ADDRESS << 1, CHIP_ID_ADDR, &chip_id, 1, false);
-    if (status != i2c_master::status::OK) {
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     return (chip_id & 0xf0) == CHIP_ID_FIXED; /* chip_id_fixed <4:7> */
 }
 
-void bmp390::read_calibration_data()
+success<bmp390::error> bmp390::read_calibration_data()
 {
     uint8_t reg_data[21];
-    i2c_master::status status = i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         NVM_PAR_T1_ADDR,
         reg_data,
         sizeof(reg_data),
         false
     );
-
-    if (status != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
 
     /* this is derived from boschsensortec/BMP3_SensorAPI */
     uint16_t p = (reg_data[1] << 8) | reg_data[0];
@@ -61,26 +56,66 @@ void bmp390::read_calibration_data()
     p = reg_data[20];
     /* 2^65 */
     calib_data.par_p11 = ((real)p / 36893488147419103232.0f);
+    return success<error>();
 }
 
-void bmp390::update()
+success<bmp390::error> bmp390::update()
 {
-    state out;
-    bool success = fetch_data(out);
-    if (!success) {
-        /* TODO: error condition */
-        return;
-    }
+    auto result = fetch_data();
+    RESULT_UNWRAP(result);
 
     scoped_lock lock(state_mutex);
-    current_state = out;
+    current_state = result.unwrap();
+    return success<error>();
 }
 
-void bmp390::set_config(uint8_t filter_coefficient)
+success<bmp390::error> bmp390::set_config(uint8_t filter_coefficient)
 {
     uint8_t config = (filter_coefficient & 0x07) << 1;
-    i2c.write(SLAVE_ADDRESS << 1, CONFIG_ADDR, &config, sizeof(config), false);
-    /* TODO: error handling */
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        CONFIG_ADDR,
+        &config,
+        sizeof(config),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_osr(osr pressure, osr temperature)
+{
+    uint8_t out = 0;
+    out |= ((uint8_t) pressure) & 0x07;
+    out |= (((uint8_t) temperature) & 0x07) << 3;
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        OSR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_odr(odr rate) 
+{
+    uint8_t out = ((uint8_t) rate) & 0x1f;
+
+    // clamp the written value
+    if (out > (uint8_t) bmp390::odr::ODR_0_0015)
+        out = (uint8_t) bmp390::odr::ODR_0_0015;
+
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        ODR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
 }
 
 bmp390::state bmp390::copy_state()
@@ -132,23 +167,38 @@ bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
     return out;
 }
 
-bool bmp390::fetch_data(state &out)
+bmp390::real bmp390::estimate_altitude(real pressure_pascals)
+{
+    // this is from the BMP180 driver datasheet (see section 3.6). The equation
+    // is labeled as the "international barometric equation". It's really just
+    // the barometric equation (see Wikipedia or whatever) re-arranged, assuming
+    // a isothermal temp. of 15 deg C.
+    
+    // TODO: Ideally, we would also use the temperature reading: hypsometric
+    // equation to also include temperature reading?
+    real out = 1.0f - powf(pressure_pascals / SEA_LEVEL_PRESSURE_PASCALS, 1.0f / 5.255f);
+    return 44330.0f * out;
+}
+
+result<bmp390::state, bmp390::error> bmp390::fetch_data()
 {
     // also reads reversed bytes
     data_frame frame;
-    if (i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         DATA_0_ADDR,
         frame,
         sizeof(data_frame),
         false
-    ) != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return false;
-    };
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+
+    state out;
     out.temperature_celsius = compensate_temperature(frame);
     out.pressure_pascals = compensate_pressure(out.temperature_celsius, frame);
-    return true;
+    out.altitude_meters = estimate_altitude(out.pressure_pascals);
+
+    return out;
 }
 
 } // namespace sdk

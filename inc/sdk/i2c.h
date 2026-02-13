@@ -2,12 +2,12 @@
 #ifndef AIRBRAKES_SDK_I2C_H_
 #define AIRBRAKES_SDK_I2C_H_
 
-#include "stm32f4xx_hal.h"
-#include "stm32f4xx_hal_i2c.h"
+#include <stm32f4xx_hal.h>
+#include <stm32f4xx_hal_i2c.h>
 
-#include <FreeRTOS.h>
-#include <task.h>
 #include <sdk/scoped_lock.h>
+#include <sdk/result.h>
+#include <sdk/signal.h>
 
 namespace sdk {
 
@@ -21,8 +21,9 @@ public:
     /**
      * Status codes from the I2C interface.
      */
-    enum class status {
+    enum class error {
         OK,
+        BUSY,
         ERROR,
     };
 
@@ -34,13 +35,9 @@ public:
     /**
      * Creates a new `i2c_master` class from a given I2C HAL handle.
      */
-    i2c_master(I2C_HandleTypeDef *handle) : blocked_task(nullptr), handle(handle)
+    i2c_master(I2C_HandleTypeDef *handle) : handle(handle)
     {
-        /*
-         * this is completely evil but since there is no userdata field of the
-         * handle we can store some data in some unused field (hdmatx for
-         * example). stores *this for callbacks
-         */
+        // stores a pointer to this in an unused field of the handle.
         handle->hdmatx = (DMA_HandleTypeDef *) this;
     }
 
@@ -52,8 +49,8 @@ public:
      * Importantly, the `device_address` is the address shifted by one bit left,
      * not the 7-bit or 10-bit address that datasheets usually list.
      */
-    status read(uint16_t device_address, uint16_t reg_address, uint8_t *data,
-            uint16_t data_size, bool mem_16bit);
+    success<error> read(uint16_t device_address, uint16_t reg_address, uint8_t
+            *data, uint16_t data_size, bool mem_16bit);
 
     /**
      * Initiates a write to a `reg_address` using the `device_address` given.
@@ -63,15 +60,15 @@ public:
      * Importantly, the `device_address` is the full address, not the 7-bit
      * address that datasheets usually list.
      */
-    status write(uint16_t device_address, uint16_t reg_address, uint8_t *data,
+    success<error> write(uint16_t device_address, uint16_t reg_address, uint8_t *data,
             uint16_t data_size, bool mem_16bit);
 
     void unblock_from_isr();
 
 private:
 
-    TaskHandle_t blocked_task;
     I2C_HandleTypeDef *handle;
+    signal interface_signal;
     mutex interface_mutex;
 };
 
