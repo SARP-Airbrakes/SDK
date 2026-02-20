@@ -23,6 +23,8 @@ public:
     static constexpr int ACC_X_LSB_ADDR = 0x12;
     static constexpr int ACC_CONF_ADDR = 0x40;
     static constexpr int ACC_RANGE_ADDR = 0x41;
+    static constexpr int ACC_PWR_CONF_ADDR = 0x7c;
+    static constexpr int ACC_PWR_CTRL_ADDR = 0x7d;
 
     static constexpr int RATE_X_LSB_ADDR = 0x02;
     static constexpr int GYRO_RANGE_ADDR = 0x0f;

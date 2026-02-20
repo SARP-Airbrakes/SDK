@@ -6,6 +6,46 @@
 
 namespace sdk {
 
+void bmi088::start()
+{
+    uint8_t pwr_ctrl_value = 0x04;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CTRL_ADDR,
+        &pwr_ctrl_value,
+        1,
+        false
+    ); 
+    uint8_t pwr_conf_value = 0x00;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CONF_ADDR,
+        &pwr_conf_value,
+        1,
+        false
+    ); 
+}
+
+void bmi088::stop()
+{
+    uint8_t pwr_ctrl_value = 0x00;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CTRL_ADDR,
+        &pwr_ctrl_value,
+        1,
+        false
+    ); 
+    uint8_t pwr_conf_value = 0x03;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CONF_ADDR,
+        &pwr_conf_value,
+        1,
+        false
+    ); 
+}
+
 success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
 {
     acc_range curr_range;
@@ -98,7 +138,7 @@ result<bool, bmi088::error> bmi088::is_connected()
     uint8_t acc_chip_id = 0;
     auto status = i2c.read(
         SLAVE_ADDRESS_ACC << 1,
-        ACC_CHIP_ID,
+        ACC_CHIP_ID_ADDR,
         &acc_chip_id,
         1,
         false
