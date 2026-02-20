@@ -102,12 +102,12 @@ public:
         uint32_t sensortime;
         bool uninitialized_sensortime = true;
 
-        acc_range acc_range = acc_range::RANGE_6G;
-        acc_bwp acc_bwp = acc_bwp::NORMAL;
-        acc_odr acc_odr = acc_odr::ODR_100HZ;
+        acc_range acc_range_val = acc_range::RANGE_6G;
+        acc_bwp acc_bwp_val = acc_bwp::NORMAL;
+        acc_odr acc_odr_val = acc_odr::ODR_100HZ;
 
-        gyro_range gyro_range = gyro_range::RANGE_2000DPS;
-        gyro_bw gyro_bw = gyro_bw::BW_532HZ;
+        gyro_range gyro_range_val = gyro_range::RANGE_2000DPS;
+        gyro_bw gyro_bw_val = gyro_bw::BW_532HZ;
     };
 
 public:

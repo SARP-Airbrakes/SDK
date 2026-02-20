@@ -15,9 +15,9 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
     // scoped read from internal state
     {
         scoped_lock lock(state_mutex);
-        curr_range = internal_state.acc_range;
-        curr_bwp = internal_state.acc_bwp;
-        curr_odr = internal_state.acc_odr;
+        curr_range = internal_state.acc_range_val;
+        curr_bwp = internal_state.acc_bwp_val;
+        curr_odr = internal_state.acc_odr_val;
     }
 
     if (range != curr_range) { 
@@ -30,7 +30,7 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.acc_range = range;
+        internal_state.acc_range_val = range;
     }
 
     if (bwp != curr_bwp || odr != curr_odr) {
@@ -47,8 +47,8 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.acc_bwp = bwp;
-        internal_state.acc_odr = odr;
+        internal_state.acc_bwp_val = bwp;
+        internal_state.acc_odr_val = odr;
     }
     return success<error>();
 }
@@ -60,8 +60,8 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
 
     {
         scoped_lock lock(state_mutex);
-        curr_range = internal_state.gyro_range;
-        curr_bw = internal_state.gyro_bw;
+        curr_range = internal_state.gyro_range_val;
+        curr_bw = internal_state.gyro_bw_val;
     }
     
     if (range != curr_range) {
@@ -74,7 +74,7 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.gyro_range = range;
+        internal_state.gyro_range_val = range;
     }
 
     if (bw != curr_bw) {
@@ -87,7 +87,7 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.gyro_bw = bw;
+        internal_state.gyro_bw_val = bw;
     }
     return success<error>();
 }
@@ -164,6 +164,7 @@ static bmi088::real get_acc_range_multiplier(bmi088::acc_range range)
     case bmi088::acc_range::RANGE_24G:
         return 24.0f;
     }
+    return 0.0f;
 }
 
 
@@ -184,7 +185,7 @@ success<bmi088::error> bmi088::fetch_acc_data(state &out)
     uint32_t sensortime = (data_frame[8] << 16) | (data_frame[7] << 8) |
         data_frame[6];
 
-    real mult = get_acc_range_multiplier(out.acc_range);
+    real mult = get_acc_range_multiplier(out.acc_range_val);
     
     /* see 5.3.4 */
     out.acceleration_ms2.x = (GRAVITY_EARTH * (real)accel_x * mult) / 32768.0f;
@@ -213,6 +214,7 @@ static bmi088::real get_gyro_range_multiplier(bmi088::gyro_range range)
     case bmi088::gyro_range::RANGE_125DPS:
         return 125.0f;
     }
+    return 0.0f;
 }
 
 success<bmi088::error> bmi088::fetch_gyro_data(state &out)
@@ -230,7 +232,7 @@ success<bmi088::error> bmi088::fetch_gyro_data(state &out)
     int16_t rate_y = (data_frame[3] << 8) | data_frame[2];
     int16_t rate_z = (data_frame[5] << 8) | data_frame[4];
 
-    real mult = get_gyro_range_multiplier(out.gyro_range);
+    real mult = get_gyro_range_multiplier(out.gyro_range_val);
     out.angular_velocity_ds.x = (rate_x * mult) / 32768.0f;
     out.angular_velocity_ds.y = (rate_y * mult) / 32768.0f;
     out.angular_velocity_ds.z = (rate_z * mult) / 32768.0f;

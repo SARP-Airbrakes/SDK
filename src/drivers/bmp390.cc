@@ -69,6 +69,23 @@ success<bmp390::error> bmp390::update()
     return success<error>();
 }
 
+success<bmp390::error> bmp390::set_power(bool press, bool temp, pwr_mode mode)
+{
+    uint8_t config = 0;
+    config |= (press ? 0x01 : 0x00);
+    config |= (temp ? 0x02 : 0x00);
+    config |= ((uint8_t) mode) << 4;
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        PWR_CTRL_ADDR,
+        &config,
+        sizeof(config),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
 success<bmp390::error> bmp390::set_config(uint8_t filter_coefficient)
 {
     uint8_t config = (filter_coefficient & 0x07) << 1;
@@ -128,9 +145,9 @@ bmp390::state bmp390::copy_state()
 bmp390::real bmp390::compensate_temperature(data_frame frame)
 {
     uint32_t uncomp = 0;
-    uncomp |= frame[0];
-    uncomp |= frame[1] << 8;
-    uncomp |= frame[2] << 16;
+    uncomp |= frame[3];
+    uncomp |= frame[4] << 8;
+    uncomp |= frame[5] << 16;
     real partial0 = (real)uncomp - calib_data.par_t1;
     real partial1 = partial0 * calib_data.par_t2;
 
@@ -141,9 +158,9 @@ bmp390::real bmp390::compensate_temperature(data_frame frame)
 bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
 {
     uint32_t uncomp = 0;
-    uncomp |= frame[3];
-    uncomp |= frame[4] << 8;
-    uncomp |= frame[5] << 16;
+    uncomp |= frame[0];
+    uncomp |= frame[1] << 8;
+    uncomp |= frame[2] << 16;
 
     real partial0 = calib_data.par_p6 * temp_c;
     real partial1 = calib_data.par_p7 * temp_c * temp_c;

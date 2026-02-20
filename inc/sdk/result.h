@@ -64,7 +64,7 @@ struct success {
 
     bool is_ok()
     {
-        return err = E::OK;
+        return err == E::OK;
     }
 };
 

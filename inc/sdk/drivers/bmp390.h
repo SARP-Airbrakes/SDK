@@ -17,6 +17,7 @@ public:
 
     static constexpr int CHIP_ID_ADDR = 0x00;
     static constexpr int DATA_0_ADDR = 0x04;
+    static constexpr int PWR_CTRL_ADDR = 0x1B;
     static constexpr int OSR_ADDR = 0x1C;
     static constexpr int ODR_ADDR = 0x1D;
     static constexpr int CONFIG_ADDR = 0x1F;
@@ -58,6 +59,12 @@ public:
         ODR_0_0015 = 0x11,
     };
 
+    enum class pwr_mode : uint8_t {
+        PWR_SLEEP = 0x00,
+        PWR_FORCED = 0x01,
+        PWR_NORMAL = 0x03,
+    };
+
     enum class error {
         OK,
         I2C
@@ -89,6 +96,11 @@ public:
      * Thread-safe blocking.
      */
     success<error> update();
+
+    /**
+     * Thread-safe blocking.
+     */
+    success<error> set_power(bool press, bool temp, pwr_mode mode);
 
     /**
      * Sets the CONFIG register with the given filter coefficient value (see

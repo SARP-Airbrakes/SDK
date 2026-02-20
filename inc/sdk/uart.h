@@ -103,9 +103,9 @@ public:
 
     /**
      * Moves up to `size` bytes from start of the internal buffer to the given
-     * `buf`. Clears space in the buffer.
+     * `buf`. Returns the amount of bytes that were moved.
      */
-    success<error> move(uint8_t *buf, size_t size);
+    result<size_t, error> move(uint8_t *buf, size_t size);
 
 private:
     UART_HandleTypeDef *handle;

@@ -7,6 +7,7 @@
 #include <sdk/result.h>
 
 #include <stm32f4xx_hal.h>
+#include <stm32f4xx_hal_spi.h>
 
 namespace sdk {
 
