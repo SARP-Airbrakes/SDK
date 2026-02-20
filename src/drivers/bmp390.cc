@@ -27,35 +27,45 @@ success<bmp390::error> bmp390::read_calibration_data()
     RESULT_UNWRAP_OR(status, error::I2C);
 
     /* this is derived from boschsensortec/BMP3_SensorAPI */
-    uint16_t p = (reg_data[1] << 8) | reg_data[0];
-    calib_data.par_t1 = ((real)p * (real)(1 << 8));
-    p = (reg_data[3] << 8) | reg_data[2];
-    calib_data.par_t2 = ((real)p / (real)(1 << 30));
-    p = reg_data[4];
-    calib_data.par_t3 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = (reg_data[6] << 8) | reg_data[5];
-    calib_data.par_p1 = ((real)(p - 16384) / (real)(1 << 20));
-    p = (reg_data[8] << 8) | reg_data[7];
-    calib_data.par_p2 = ((real)(p - 16384) / (real)(1 << 29)); 
-    p = reg_data[9];
-    calib_data.par_p3 = ((real)p / (real)((uint64_t) 1 << 32));
-    p = reg_data[10];
-    calib_data.par_p4 = ((real)p / (real)((uint64_t) 1 << 37));
-    p = (reg_data[12] << 8) | reg_data[11];
-    calib_data.par_p5 = ((real)p * (real)(1 << 3));
-    p = (reg_data[14] << 8) | reg_data[13];
-    calib_data.par_p6 = ((real)p / (real)(1 << 6));
-    p = reg_data[15];
-    calib_data.par_p7 = ((real)p / (real)(1 << 8));
-    p = reg_data[16];
-    calib_data.par_p8 = ((real)p / (real)(1 << 15));
-    p = (reg_data[18] << 8) | reg_data[17];
-    calib_data.par_p9 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = reg_data[19];
-    calib_data.par_p10 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = reg_data[20];
+    
+    // There is a lot of re-interpretation of unsigned values into signed
+    // values, which *seems* superfluous but integer conversion to signed types
+    // is implementation defined when the value does not fit inside of the
+    // signed type. A C++ nightmare!
+    
+    uint16_t par_t1 = (((uint16_t) reg_data[1]) << 8) | reg_data[0];
+    uint16_t par_t2 = (((uint16_t) reg_data[3]) << 8) | reg_data[2];
+    int8_t par_t3 = *((int8_t *) &reg_data[4]);
+    uint16_t p = ((((uint16_t) reg_data[6]) << 8) | reg_data[5]);
+    int16_t par_p1 = *((int16_t *) &p);
+    p = ((((uint16_t) reg_data[8]) << 8) | reg_data[7]);
+    int16_t par_p2 = *((int16_t *) &p);
+    int8_t par_p3 = *((int8_t *) &reg_data[9]);
+    int8_t par_p4 = *((int8_t *) &reg_data[10]);
+    uint16_t par_p5 = (((uint16_t) reg_data[12]) << 8) | reg_data[11];
+    uint16_t par_p6 = (((uint16_t) reg_data[14] << 8)) | reg_data[13];
+    int8_t par_p7 = *((int8_t *) &reg_data[15]);
+    int8_t par_p8 = *((int8_t *) &reg_data[16]);
+    p = ((((uint16_t) reg_data[18]) << 8) | reg_data[17]);
+    int16_t par_p9 = *((int16_t *) &p);
+    int8_t par_p10 = *((int8_t *) &reg_data[19]);
+    int8_t par_p11 = *((int8_t *) &reg_data[20]);
+
+    calib_data.par_t1 = ((real)par_t1 * (real)(1 << 8));
+    calib_data.par_t2 = ((real)par_t2 / (real)(1 << 30));
+    calib_data.par_t3 = ((real)par_t3 / (real)((uint64_t) 1 << 48));
+    calib_data.par_p1 = ((real)(par_p1 - 16384) / (real)(1 << 20));
+    calib_data.par_p2 = ((real)(par_p2 - 16384) / (real)(1 << 29)); 
+    calib_data.par_p3 = ((real)par_p3 / (real)((uint64_t) 1 << 32));
+    calib_data.par_p4 = ((real)par_p4 / (real)((uint64_t) 1 << 37));
+    calib_data.par_p5 = ((real)par_p5 * (real)(1 << 3));
+    calib_data.par_p6 = ((real)par_p6 / (real)(1 << 6));
+    calib_data.par_p7 = ((real)par_p7 / (real)(1 << 8));
+    calib_data.par_p8 = ((real)par_p8 / (real)(1 << 15));
+    calib_data.par_p9 = ((real)par_p9 / (real)((uint64_t) 1 << 48));
+    calib_data.par_p10 = ((real)par_p10 / (real)((uint64_t) 1 << 48));
     /* 2^65 */
-    calib_data.par_p11 = ((real)p / 36893488147419103232.0f);
+    calib_data.par_p11 = ((real)par_p11 / 36893488147419103232.0f);
     return success<error>();
 }
 
