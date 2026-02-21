@@ -87,8 +87,6 @@ public:
 
     using real = float;
 
-    /* seconds per sensortime lsb */
-    static constexpr real SENSORTIME_RESOLUTION = 1.0f / 256000.0f;
     static constexpr real GRAVITY_EARTH = 9.80665f; /* m/s^2 */
 
     struct vec3 {
@@ -100,9 +98,8 @@ public:
         vec3 orientation_deg; /* in deg */
         vec3 angular_velocity_ds; /* in deg/s */
 
-        uint32_t last_sensortime;
-        uint32_t sensortime;
-        bool uninitialized_sensortime = true;
+        uint32_t last_tick;
+        uint32_t tick;
 
         acc_range acc_range_val = acc_range::RANGE_6G;
         acc_bwp acc_bwp_val = acc_bwp::NORMAL;
@@ -143,8 +140,6 @@ public:
     state copy_state();
 
 private:
-    real sensortime_to_s(uint32_t sensortime);
-
     /** Gets the difference (in s) between two sensortimes. */
     real get_delta_t(uint32_t last_sensortime, uint32_t sensortime);
 

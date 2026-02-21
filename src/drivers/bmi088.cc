@@ -8,6 +8,8 @@ namespace sdk {
 
 void bmi088::start()
 {
+    internal_state.tick = HAL_GetTick();
+    internal_state.last_tick = internal_state.tick;
     uint8_t pwr_ctrl_value = 0x04;
     i2c.write(
         SLAVE_ADDRESS_ACC << 1,
@@ -174,17 +176,19 @@ bmi088::state bmi088::copy_state()
     return internal_state;
 }
 
-bmi088::real bmi088::sensortime_to_s(uint32_t sensortime)
+static bmi088::real tick_to_s(uint32_t tick)
 {
-    return SENSORTIME_RESOLUTION * (real)sensortime;
+    return (bmi088::real)tick / 1000.0f;
 }
 
-bmi088::real bmi088::get_delta_t(uint32_t last_sensortime, uint32_t sensortime)
+
+bmi088::real bmi088::get_delta_t(uint32_t last_tick, uint32_t tick)
 {
     // overflow has occurred
-    if (sensortime < last_sensortime)
-        sensortime += 0x00ffffff;
-    real out = sensortime_to_s(sensortime) - sensortime_to_s(last_sensortime);
+    if (tick < last_tick)
+        return 0;
+
+    real out = tick_to_s(tick) - tick_to_s(last_tick);
 
     // really make sure that there is no negative times
     if (out < 0)
@@ -222,8 +226,6 @@ success<bmi088::error> bmi088::fetch_acc_data(state &out)
     int16_t accel_x = (data_frame[1] << 8) | data_frame[0];
     int16_t accel_y = (data_frame[3] << 8) | data_frame[2];
     int16_t accel_z = (data_frame[5] << 8) | data_frame[4];
-    uint32_t sensortime = (data_frame[8] << 16) | (data_frame[7] << 8) |
-        data_frame[6];
 
     real mult = get_acc_range_multiplier(out.acc_range_val);
     
@@ -232,11 +234,6 @@ success<bmi088::error> bmi088::fetch_acc_data(state &out)
     out.acceleration_ms2.y = (GRAVITY_EARTH * (real)accel_y * mult) / 32768.0f;
     out.acceleration_ms2.z = (GRAVITY_EARTH * (real)accel_z * mult) / 32768.0f;
 
-    // its better to have a delta-T of 0 rather than a large amount
-    out.last_sensortime = out.uninitialized_sensortime ? sensortime :
-        out.sensortime;
-    out.uninitialized_sensortime = false;
-    out.sensortime = sensortime;
     return success<error>();
 }
 
@@ -277,7 +274,14 @@ success<bmi088::error> bmi088::fetch_gyro_data(state &out)
     out.angular_velocity_ds.y = (rate_y * mult) / 32768.0f;
     out.angular_velocity_ds.z = (rate_z * mult) / 32768.0f;
 
-    real delta_t = get_delta_t(out.last_sensortime, out.sensortime);
+    HAL_GetTick();
+    HAL_GetTickFreq();
+
+    out.tick = HAL_GetTick();
+
+    real delta_t = get_delta_t(out.last_tick, out.tick);
+
+    out.last_tick = out.tick;
     out.orientation_deg.x += out.angular_velocity_ds.x * delta_t;
     out.orientation_deg.y += out.angular_velocity_ds.y * delta_t;
     out.orientation_deg.z += out.angular_velocity_ds.z * delta_t;
