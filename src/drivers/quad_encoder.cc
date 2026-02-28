@@ -29,12 +29,12 @@ success<> quad_encoder::read_and_update(uint16_t updated_pin)
     return success<>();
 }
 
-float quad_encoder::get_revolutions()
+float quad_encoder::get_revolutions() const
 {
-    return (float) count / counts_per_rev;
+    return (real) count / counts_per_rev;
 }
 
-float quad_encoder::get_degrees()
+float quad_encoder::get_degrees() const
 {
     return get_revolutions() * 360.0f;
 }

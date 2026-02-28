@@ -23,7 +23,7 @@ public:
         real counts_per_rev, // encoder counts per revolution of motor shaft
         unique_pin &&pin_a,
         unique_pin &&pin_b
-    ) : counts_per_rev(counts_per_rev), pin_a(std::move(pin_a)),
+    ) : count(0), counts_per_rev(counts_per_rev), pin_a(std::move(pin_a)),
             pin_b(std::move(pin_b))
     {
     }
@@ -32,12 +32,13 @@ public:
     success<> read_and_update(uint16_t updated_pin);
 
     /** Returns the latest value read from the quad. encoder */
-    real get_revolutions();
-    real get_degrees();
+    real get_revolutions() const;
+    real get_degrees() const;
+
+    int count;
 
 private:
 
-    int count;
     real counts_per_rev;
 
     unique_pin pin_a, pin_b;
