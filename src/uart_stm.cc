@@ -4,6 +4,11 @@
 
 namespace sdk {
 
+uart_buffered *uart_buffered::from_handle(UART_HandleTypeDef *handle)
+{
+    return (uart_buffered *) handle->hdmatx;
+}
+
 success<uart_buffered::error> uart_buffered::set_baud(uint32_t baud)
 {
     if (uart_state != state::IDLE)
