@@ -10,6 +10,18 @@ using real = float;
 struct vec3 {
     real x, y, z;
 
+    inline void operator+=(const vec3 &rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+    }
+
+    inline vec3 operator+(const vec3 &rhs) const
+    {
+        return { x + rhs.x, y + rhs.y, z + rhs.z };
+    }
+
     inline vec3 operator-(const vec3 &rhs) const
     {
         return { x - rhs.x, y - rhs.y, z - rhs.z };
