@@ -3,7 +3,30 @@
 
 #include <cstring>
 
+#include <testing.h>
+
 namespace sdk {
+
+success<w25q128jv::error> w25q128jv::erase()
+{
+    uint8_t cmd[1];
+    cmd[0] = CHIP_ERASE_COMMAND;
+
+    RESULT_UNWRAP(block_for_busy_bit());
+
+    // pin enable scope
+    {
+        auto pin = enable_chip();
+
+        // send command to erase
+        auto status = interface.transmit(cmd, sizeof(cmd));
+        RESULT_UNWRAP_OR(status, error::SPI);
+    }
+    
+    // wait until we aren't busy
+    RESULT_UNWRAP(block_for_busy_bit(255));
+    return success<error>();
+}
 
 success<w25q128jv::error> w25q128jv::read(uint32_t address,
         uint8_t *data, uint32_t data_size)
@@ -88,14 +111,18 @@ scoped_pin w25q128jv::enable_chip()
 
 success<w25q128jv::error> w25q128jv::block_for_busy_bit(uint8_t attempts)
 {
+    testing_serial_print("DRIVER: PRE-BLOCK\r\n");
     while (attempts-- > 0) {
         auto reg = read_status_register_1();
         RESULT_UNWRAP(reg);
         
         auto value = reg.unwrap();
-        if ((value & 0x01) == 0)
+        if ((value & 0x01) == 0) { 
+            testing_serial_print("DRIVER: POST-BLOCK\r\n");
             return success<error>();
+        }
     }
+    testing_serial_print("DRIVER: BLOCKED\r\n");
     return error::BUSY;
 }
 
@@ -108,11 +135,16 @@ result<uint8_t, w25q128jv::error> w25q128jv::read_status_register_1()
 
     {
         auto pin = enable_chip();
+
+        testing_serial_print("DRIVER(read_status_register_1): PRE-TRANSMIT\r\n");
         auto status = interface.transmit(cmd, sizeof(cmd));
         RESULT_UNWRAP_OR(status, error::SPI);
 
+        // cant block here
+
         status = interface.receive(&out, sizeof(out));
         RESULT_UNWRAP_OR(status, error::SPI);
+        testing_serial_print("DRIVER(read_status_register_1): POST-RECEIVE\r\n");
     }
     return out;
 }

@@ -21,8 +21,15 @@ success<spi::error> spi::receive(uint8_t *data, uint16_t size)
         data,
         size
     );
+
+    if (status != HAL_OK)
+        return error::ERROR;
+
     RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
-    return status == HAL_OK ? error::OK : error::ERROR;
+
+    success<error> out = error_flag ? error::ERROR : error::OK;
+    error_flag = false;
+    return out;
 }
 
 success<spi::error> spi::transmit(const uint8_t *data, uint16_t size)
@@ -37,12 +44,25 @@ success<spi::error> spi::transmit(const uint8_t *data, uint16_t size)
         data,
         size
     );
+
+    if (status != HAL_OK)
+        return error::ERROR;
+
     RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
-    return status == HAL_OK ? error::OK : error::ERROR;
+
+    success<error> out = error_flag ? error::ERROR : error::OK;
+    error_flag = false;
+    return out;
 }
 
 void spi::unblock_from_isr()
 {
+    interface_signal.unblock_from_isr();
+}
+
+void spi::error_from_isr()
+{
+    error_flag = true;
     interface_signal.unblock_from_isr();
 }
 

@@ -51,12 +51,14 @@ public:
     success<error> transmit(const uint8_t *data, uint16_t size);
 
     void unblock_from_isr();
+    void error_from_isr();
 
 private:
 
     SPI_HandleTypeDef *handle;
     signal interface_signal;
     mutex interface_mutex;
+    bool error_flag;
 };
 
 } // namespace sdk

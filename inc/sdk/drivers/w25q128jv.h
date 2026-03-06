@@ -23,6 +23,7 @@ public: // constants
     static constexpr int READ_DATA_COMMAND = 0x03;
     static constexpr int READ_STATUS_REGISTER_1_COMMAND = 0x05;
     static constexpr int WRITE_ENABLE_COMMAND = 0x06;
+    static constexpr int CHIP_ERASE_COMMAND = 0x60; // or 0xc7
     static constexpr int READ_MANUFACTURER_DEVICE_ID_COMMAND = 0x90;
 
     enum class error {
@@ -43,16 +44,16 @@ public:
     }
 
     /**
-     * Updates the internal driver state. To only be called from a separate
-     * driver thread.
+     * Erases the chip. Thread-safe blocking.
      */
-    void update();
+    success<error> erase();
 
     /**
      * Reads `size` bytes into `buffer` from the flash memory starting at
      * `address`. Thread-safe blocking.
      */
     success<error> read(uint32_t address, uint8_t *buffer, uint32_t size);
+
     /**
      * Writes `size` bytes of `buffer` to the flash memory starting at
      * `address`. Thread-safe blocking.
