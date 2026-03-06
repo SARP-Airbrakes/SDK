@@ -4,6 +4,7 @@
 
 #include <sdk/i2c.h>
 #include <sdk/mutex.h>
+#include <sdk/vecmath.h>
 
 namespace sdk {
 
@@ -23,7 +24,6 @@ public:
     static constexpr int NVM_PAR_T1_ADDR = 0x31;
 
     /* this might be too low precision */
-    using real = float;
     using data_frame = uint8_t[8];
 
     static constexpr real SEA_LEVEL_PRESSURE_PASCALS = 101325;
