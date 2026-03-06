@@ -64,12 +64,14 @@ public:
             uint16_t data_size, bool mem_16bit);
 
     void unblock_from_isr();
+    void error_from_isr();
 
 private:
 
     I2C_HandleTypeDef *handle;
     signal interface_signal;
     mutex interface_mutex;
+    bool error_flag;
 };
 
 } // namespace sdk

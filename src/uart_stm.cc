@@ -4,6 +4,11 @@
 
 namespace sdk {
 
+uart_buffered *uart_buffered::from_handle(UART_HandleTypeDef *handle)
+{
+    return (uart_buffered *) handle->hdmatx;
+}
+
 success<uart_buffered::error> uart_buffered::set_baud(uint32_t baud)
 {
     if (uart_state != state::IDLE)
@@ -132,16 +137,18 @@ result<size_t, uart_buffered::error> uart_buffered::next(uint8_t byte)
     return out;
 }
 
-success<uart_buffered::error> uart_buffered::move(uint8_t *out, size_t size)
+result<size_t, uart_buffered::error> uart_buffered::move(uint8_t *out, size_t size)
 {
+    size_t number = 0;
     /* invalidate await size state */
     await_size = 0;
     for (size_t i = 0; read_index != write_index; read_index = (read_index + 1) % BUFFER_SIZE) {
         if (i >= size)
-            return success<error>();
+            return number;
         out[i++] = buffer[read_index];
+        number++;
     }
-    return success<error>();
+    return number;
 }
 
 } // namespace sdk

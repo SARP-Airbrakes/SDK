@@ -34,8 +34,14 @@ success<i2c_master::error> i2c_master::read(uint16_t device_address, uint16_t
         data_size
     );
 
+    if (status != HAL_OK)
+        return error::ERROR;
+
     RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
-    return success<error>(status == HAL_OK ? error::OK : error::ERROR);
+
+    success<error> out = error_flag ? error::ERROR : error::OK;
+    error_flag = false;
+    return out;
 }
 
 success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
@@ -60,12 +66,24 @@ success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
         data_size
     );
 
+    if (status != HAL_OK)
+        return error::ERROR;
+
     RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
-    return success<error>(status == HAL_OK ? error::OK : error::ERROR);
+
+    success<error> out = error_flag ? error::ERROR : error::OK;
+    error_flag = false;
+    return out;
 }
 
 void i2c_master::unblock_from_isr()
 {
+    interface_signal.unblock_from_isr();
+}
+
+void i2c_master::error_from_isr()
+{
+    error_flag = true;
     interface_signal.unblock_from_isr();
 }
 

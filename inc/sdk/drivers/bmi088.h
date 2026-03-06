@@ -24,6 +24,8 @@ public:
     static constexpr int ACC_X_LSB_ADDR = 0x12;
     static constexpr int ACC_CONF_ADDR = 0x40;
     static constexpr int ACC_RANGE_ADDR = 0x41;
+    static constexpr int ACC_PWR_CONF_ADDR = 0x7c;
+    static constexpr int ACC_PWR_CTRL_ADDR = 0x7d;
 
     static constexpr int RATE_X_LSB_ADDR = 0x02;
     static constexpr int GYRO_RANGE_ADDR = 0x0f;
@@ -93,16 +95,15 @@ public:
         vec3 orientation_deg; /* in deg */
         vec3 angular_velocity_ds; /* in deg/s */
 
-        uint32_t last_sensortime;
-        uint32_t sensortime;
-        bool uninitialized_sensortime = true;
+        uint32_t last_tick;
+        uint32_t tick;
 
-        acc_range acc_range = acc_range::RANGE_6G;
-        acc_bwp acc_bwp = acc_bwp::NORMAL;
-        acc_odr acc_odr = acc_odr::ODR_100HZ;
+        acc_range acc_range_val = acc_range::RANGE_6G;
+        acc_bwp acc_bwp_val = acc_bwp::NORMAL;
+        acc_odr acc_odr_val = acc_odr::ODR_100HZ;
 
-        gyro_range gyro_range = gyro_range::RANGE_2000DPS;
-        gyro_bw gyro_bw = gyro_bw::BW_532HZ;
+        gyro_range gyro_range_val = gyro_range::RANGE_2000DPS;
+        gyro_bw gyro_bw_val = gyro_bw::BW_532HZ;
     };
 
 public:
@@ -136,8 +137,6 @@ public:
     state copy_state();
 
 private:
-    real sensortime_to_s(uint32_t sensortime);
-
     /** Gets the difference (in s) between two sensortimes. */
     real get_delta_t(uint32_t last_sensortime, uint32_t sensortime);
 

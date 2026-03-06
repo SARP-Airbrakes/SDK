@@ -6,6 +6,48 @@
 
 namespace sdk {
 
+void bmi088::start()
+{
+    internal_state.tick = HAL_GetTick();
+    internal_state.last_tick = internal_state.tick;
+    uint8_t pwr_ctrl_value = 0x04;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CTRL_ADDR,
+        &pwr_ctrl_value,
+        1,
+        false
+    ); 
+    uint8_t pwr_conf_value = 0x00;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CONF_ADDR,
+        &pwr_conf_value,
+        1,
+        false
+    ); 
+}
+
+void bmi088::stop()
+{
+    uint8_t pwr_ctrl_value = 0x00;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CTRL_ADDR,
+        &pwr_ctrl_value,
+        1,
+        false
+    ); 
+    uint8_t pwr_conf_value = 0x03;
+    i2c.write(
+        SLAVE_ADDRESS_ACC << 1,
+        ACC_PWR_CONF_ADDR,
+        &pwr_conf_value,
+        1,
+        false
+    ); 
+}
+
 success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_odr odr)
 {
     acc_range curr_range;
@@ -15,9 +57,9 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
     // scoped read from internal state
     {
         scoped_lock lock(state_mutex);
-        curr_range = internal_state.acc_range;
-        curr_bwp = internal_state.acc_bwp;
-        curr_odr = internal_state.acc_odr;
+        curr_range = internal_state.acc_range_val;
+        curr_bwp = internal_state.acc_bwp_val;
+        curr_odr = internal_state.acc_odr_val;
     }
 
     if (range != curr_range) { 
@@ -30,7 +72,7 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.acc_range = range;
+        internal_state.acc_range_val = range;
     }
 
     if (bwp != curr_bwp || odr != curr_odr) {
@@ -47,8 +89,8 @@ success<bmi088::error> bmi088::set_acc_config(acc_range range, acc_bwp bwp, acc_
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.acc_bwp = bwp;
-        internal_state.acc_odr = odr;
+        internal_state.acc_bwp_val = bwp;
+        internal_state.acc_odr_val = odr;
     }
     return success<error>();
 }
@@ -60,8 +102,8 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
 
     {
         scoped_lock lock(state_mutex);
-        curr_range = internal_state.gyro_range;
-        curr_bw = internal_state.gyro_bw;
+        curr_range = internal_state.gyro_range_val;
+        curr_bw = internal_state.gyro_bw_val;
     }
     
     if (range != curr_range) {
@@ -74,7 +116,7 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.gyro_range = range;
+        internal_state.gyro_range_val = range;
     }
 
     if (bw != curr_bw) {
@@ -87,7 +129,7 @@ success<bmi088::error> bmi088::set_gyro_config(gyro_range range, gyro_bw bw)
         );
         RESULT_UNWRAP_OR(status, error::I2C);
         scoped_lock lock(state_mutex);
-        internal_state.gyro_bw = bw;
+        internal_state.gyro_bw_val = bw;
     }
     return success<error>();
 }
@@ -98,7 +140,7 @@ result<bool, bmi088::error> bmi088::is_connected()
     uint8_t acc_chip_id = 0;
     auto status = i2c.read(
         SLAVE_ADDRESS_ACC << 1,
-        ACC_CHIP_ID,
+        ACC_CHIP_ID_ADDR,
         &acc_chip_id,
         1,
         false
@@ -134,17 +176,19 @@ bmi088::state bmi088::copy_state()
     return internal_state;
 }
 
-bmi088::real bmi088::sensortime_to_s(uint32_t sensortime)
+static bmi088::real tick_to_s(uint32_t tick)
 {
-    return SENSORTIME_RESOLUTION * (real)sensortime;
+    return (bmi088::real)tick / 1000.0f;
 }
 
-bmi088::real bmi088::get_delta_t(uint32_t last_sensortime, uint32_t sensortime)
+
+bmi088::real bmi088::get_delta_t(uint32_t last_tick, uint32_t tick)
 {
     // overflow has occurred
-    if (sensortime < last_sensortime)
-        sensortime += 0x00ffffff;
-    real out = sensortime_to_s(sensortime) - sensortime_to_s(last_sensortime);
+    if (tick < last_tick)
+        return 0;
+
+    real out = tick_to_s(tick) - tick_to_s(last_tick);
 
     // really make sure that there is no negative times
     if (out < 0)
@@ -164,6 +208,7 @@ static bmi088::real get_acc_range_multiplier(bmi088::acc_range range)
     case bmi088::acc_range::RANGE_24G:
         return 24.0f;
     }
+    return 0.0f;
 }
 
 
@@ -181,21 +226,14 @@ success<bmi088::error> bmi088::fetch_acc_data(state &out)
     int16_t accel_x = (data_frame[1] << 8) | data_frame[0];
     int16_t accel_y = (data_frame[3] << 8) | data_frame[2];
     int16_t accel_z = (data_frame[5] << 8) | data_frame[4];
-    uint32_t sensortime = (data_frame[8] << 16) | (data_frame[7] << 8) |
-        data_frame[6];
 
-    real mult = get_acc_range_multiplier(out.acc_range);
+    real mult = get_acc_range_multiplier(out.acc_range_val);
     
     /* see 5.3.4 */
     out.acceleration_ms2.x = (GRAVITY_EARTH * (real)accel_x * mult) / 32768.0f;
     out.acceleration_ms2.y = (GRAVITY_EARTH * (real)accel_y * mult) / 32768.0f;
     out.acceleration_ms2.z = (GRAVITY_EARTH * (real)accel_z * mult) / 32768.0f;
 
-    // its better to have a delta-T of 0 rather than a large amount
-    out.last_sensortime = out.uninitialized_sensortime ? sensortime :
-        out.sensortime;
-    out.uninitialized_sensortime = false;
-    out.sensortime = sensortime;
     return success<error>();
 }
 
@@ -213,6 +251,7 @@ static bmi088::real get_gyro_range_multiplier(bmi088::gyro_range range)
     case bmi088::gyro_range::RANGE_125DPS:
         return 125.0f;
     }
+    return 0.0f;
 }
 
 success<bmi088::error> bmi088::fetch_gyro_data(state &out)
@@ -230,12 +269,19 @@ success<bmi088::error> bmi088::fetch_gyro_data(state &out)
     int16_t rate_y = (data_frame[3] << 8) | data_frame[2];
     int16_t rate_z = (data_frame[5] << 8) | data_frame[4];
 
-    real mult = get_gyro_range_multiplier(out.gyro_range);
+    real mult = get_gyro_range_multiplier(out.gyro_range_val);
     out.angular_velocity_ds.x = (rate_x * mult) / 32768.0f;
     out.angular_velocity_ds.y = (rate_y * mult) / 32768.0f;
     out.angular_velocity_ds.z = (rate_z * mult) / 32768.0f;
 
-    real delta_t = get_delta_t(out.last_sensortime, out.sensortime);
+    HAL_GetTick();
+    HAL_GetTickFreq();
+
+    out.tick = HAL_GetTick();
+
+    real delta_t = get_delta_t(out.last_tick, out.tick);
+
+    out.last_tick = out.tick;
     out.orientation_deg.x += out.angular_velocity_ds.x * delta_t;
     out.orientation_deg.y += out.angular_velocity_ds.y * delta_t;
     out.orientation_deg.z += out.angular_velocity_ds.z * delta_t;
