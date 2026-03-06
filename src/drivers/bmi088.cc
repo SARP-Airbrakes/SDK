@@ -3,6 +3,7 @@
 
 #include <sdk/result.h>
 #include <sdk/scoped_lock.h>
+#include <sdk/vecmath.h>
 
 namespace sdk {
 
@@ -176,13 +177,13 @@ bmi088::state bmi088::copy_state()
     return internal_state;
 }
 
-static bmi088::real tick_to_s(uint32_t tick)
+static real tick_to_s(uint32_t tick)
 {
-    return (bmi088::real)tick / 1000.0f;
+    return (real)tick / 1000.0f;
 }
 
 
-bmi088::real bmi088::get_delta_t(uint32_t last_tick, uint32_t tick)
+real bmi088::get_delta_t(uint32_t last_tick, uint32_t tick)
 {
     // overflow has occurred
     if (tick < last_tick)
@@ -196,7 +197,7 @@ bmi088::real bmi088::get_delta_t(uint32_t last_tick, uint32_t tick)
     return out;
 }
 
-static bmi088::real get_acc_range_multiplier(bmi088::acc_range range)
+static real get_acc_range_multiplier(bmi088::acc_range range)
 {
     switch (range) {
     case bmi088::acc_range::RANGE_3G:
@@ -237,7 +238,7 @@ success<bmi088::error> bmi088::fetch_acc_data(state &out)
     return success<error>();
 }
 
-static bmi088::real get_gyro_range_multiplier(bmi088::gyro_range range)
+static real get_gyro_range_multiplier(bmi088::gyro_range range)
 {
     switch (range) {
     case bmi088::gyro_range::RANGE_2000DPS:
