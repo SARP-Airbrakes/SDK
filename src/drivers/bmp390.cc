@@ -152,7 +152,7 @@ bmp390::state bmp390::copy_state()
     return current_state;
 }
 
-bmp390::real bmp390::compensate_temperature(data_frame frame)
+real bmp390::compensate_temperature(data_frame frame)
 {
     uint32_t uncomp = 0;
     uncomp |= frame[3];
@@ -165,7 +165,7 @@ bmp390::real bmp390::compensate_temperature(data_frame frame)
     return partial1 + (partial0 * partial0) * calib_data.par_t3;
 }
 
-bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
+real bmp390::compensate_pressure(real temp_c, data_frame frame)
 {
     uint32_t uncomp = 0;
     uncomp |= frame[0];
@@ -194,7 +194,7 @@ bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
     return out;
 }
 
-bmp390::real bmp390::estimate_altitude(real pressure_pascals)
+real bmp390::estimate_altitude(real pressure_pascals)
 {
     // this is from the BMP180 driver datasheet (see section 3.6). The equation
     // is labeled as the "international barometric equation". It's really just

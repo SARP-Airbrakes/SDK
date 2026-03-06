@@ -5,6 +5,7 @@
 #include <sdk/i2c.h>
 #include <sdk/mutex.h>
 #include <sdk/result.h>
+#include <sdk/vecmath.h>
 
 namespace sdk {
 
@@ -85,13 +86,9 @@ public:
         GYRO,
     };
 
-    using real = float;
-
+    /* seconds per sensortime lsb */
+    static constexpr real SENSORTIME_RESOLUTION = 1.0f / 256000.0f;
     static constexpr real GRAVITY_EARTH = 9.80665f; /* m/s^2 */
-
-    struct vec3 {
-        real x, y, z;
-    };
     
     struct state {
         vec3 acceleration_ms2; /* in m/s^2 */

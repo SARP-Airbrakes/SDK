@@ -40,6 +40,7 @@ private:
     float integral_error;
     float last_error;
 
+public:
     drv8701 target_motor;
     quad_encoder encoder;
     
