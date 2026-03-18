@@ -1,5 +1,4 @@
 
-#include "stm32f401xc.h"
 #include <sdk/pwm.h>
 
 namespace sdk {

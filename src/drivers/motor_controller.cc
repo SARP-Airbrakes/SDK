@@ -21,7 +21,7 @@ void motor_controller::set_target_degrees(float new_target)
 void motor_controller::update_motor(float dt)
 {
     float curr_degrees = encoder.get_degrees();
-    float error = curr_degrees - target_degrees;
+    float error = target_degrees - curr_degrees;
 
     integral_error = error * dt;
 
