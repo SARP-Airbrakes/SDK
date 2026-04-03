@@ -25,6 +25,7 @@ success<i2c_master::error> i2c_master::read(uint16_t device_address, uint16_t
     // lock the interface mutex before read
     scoped_lock lock(interface_mutex);
 
+    interface_signal.prepare_block();
     HAL_StatusTypeDef status = HAL_I2C_Mem_Read_IT(
         handle,
         device_address,
@@ -57,6 +58,7 @@ success<i2c_master::error> i2c_master::write(uint16_t device_address, uint16_t
     // lock the interface mutex before write
     scoped_lock lock(interface_mutex);
 
+    interface_signal.prepare_block();
     HAL_StatusTypeDef status = HAL_I2C_Mem_Write_IT(
         handle,
         device_address,

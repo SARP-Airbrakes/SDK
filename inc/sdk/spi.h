@@ -49,6 +49,11 @@ public:
      * Transmits `size` bytes from `data` through the interface;
      */
     success<error> transmit(const uint8_t *data, uint16_t size);
+    /**
+     * Transmits and receives `size` bytes via `data` with the interface.
+     */
+    success<error> transmit_receive(const uint8_t *tx_data, uint8_t *rx_data,
+            uint16_t size);
 
     void unblock_from_isr();
     void error_from_isr();

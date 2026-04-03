@@ -68,14 +68,16 @@ private:
 
     scoped_pin enable_chip();
 
+    void force_disable();
+
     // blocks until busy bit is 0
-    success<error> block_for_busy_bit(uint8_t attempts = DEFAULT_POLL_ATTEMPTS);
+    success<error> block_for_busy_bit(uint32_t attempts = DEFAULT_POLL_ATTEMPTS);
     result<uint8_t, error> read_status_register_1();
 
     // reads the BUSY bit from the chip
     bool is_busy();
 
-private:
+public:
     spi &interface;
     unique_pin cs_pin;
     mutex state_mutex;

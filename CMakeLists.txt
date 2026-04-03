@@ -20,6 +20,7 @@ add_library(airbrakes_sdk OBJECT
     src/drivers/motor_controller.cc
     src/drivers/quad_encoder.cc
     src/drivers/w25q128jv.cc
+    src/box_rtos.cc
     src/i2c_stm.cc
     src/mutex_rtos.cc
     src/pwm.cc

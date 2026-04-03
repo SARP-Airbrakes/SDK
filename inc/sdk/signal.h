@@ -36,6 +36,13 @@ public:
      */
     void unblock_from_isr();
 
+    /**
+     * Prepares this signal to block. If unblock_from_isr is called before
+     * #block() is then called, then the next call to #block() does not actually
+     * block. This is for I2C and SPI non-blocking modes.
+     */
+    void prepare_block();
+
     /** Returns true if this signal is currently blocking a thread. */
     bool is_full()
     {
@@ -43,7 +50,15 @@ public:
     }
 
 private:
+
+    enum class state {
+        NONE,
+        PREPARED,
+        FINISHED_EARLY,
+    };
+
     TaskHandle_t blocked_task;
+    state block_state;
 
 };
 
