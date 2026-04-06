@@ -44,6 +44,11 @@ public:
     }
 
     /**
+     * Checks if the chip is connected.
+     */
+    result<bool, error> is_connected();
+
+    /**
      * Erases the chip. Thread-safe blocking.
      */
     success<error> erase();

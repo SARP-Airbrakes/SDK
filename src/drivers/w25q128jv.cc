@@ -2,14 +2,29 @@
 #include <sdk/drivers/w25q128jv.h>
 #include <sdk/box.h>
 
-#include <testing.h>
-
 #include <cmsis_os.h>
 
 #include <cstdio>
 #include <cstring>
 
 namespace sdk {
+
+result<bool, w25q128jv::error> w25q128jv::is_connected()
+{
+    uint8_t out_data[6] = { };
+    uint8_t in_data[sizeof(out_data)] = { };
+    out_data[0] = 0x90; // Read Device ID
+
+    {
+        auto pin = enable_chip();
+
+        // read the device id
+        auto status = interface.transmit_receive(out_data, in_data, sizeof(out_data));
+        RESULT_UNWRAP_OR(status, error::SPI);
+    }
+    
+    return in_data[4] == 0xef && in_data[5] == 0x17;
+}
 
 success<w25q128jv::error> w25q128jv::erase()
 {

@@ -5,6 +5,8 @@
 #include <sdk/scoped_lock.h>
 #include <sdk/vecmath.h>
 
+#include <cstdio>
+
 namespace sdk {
 
 void bmi088::start()

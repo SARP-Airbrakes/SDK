@@ -2,8 +2,6 @@
 #include <sdk/spi.h>
 #include <sdk/scoped_lock.h>
 
-#include <testing.h>
-
 namespace sdk {
 
 spi *spi::from_handle(SPI_HandleTypeDef *handle)
