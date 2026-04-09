@@ -33,12 +33,8 @@ public:
         READING,
         WRITING,
         FULL,
-<<<<<<< HEAD
         STOPPING,
         ERROR,
-=======
-        STOPPING
->>>>>>> 62cacc7dedb41e2fc5212fbbc02b84c86094d0a2
     };
 
 public:
@@ -95,14 +91,11 @@ public:
     void transmit_complete_from_isr();
 
     /**
-<<<<<<< HEAD
      * To be called from an interrupt after an error condition.
      */
     void error_from_isr();
 
     /**
-=======
->>>>>>> 62cacc7dedb41e2fc5212fbbc02b84c86094d0a2
      * Returns true if the internal buffer is full.
      */
     bool is_full();
@@ -123,11 +116,7 @@ public:
 private:
     UART_HandleTypeDef *handle;
 
-<<<<<<< HEAD
     state uart_state = state::IDLE;
-=======
-    state uart_state;
->>>>>>> 62cacc7dedb41e2fc5212fbbc02b84c86094d0a2
     signal interface_signal;
 
     uint8_t target_byte;
