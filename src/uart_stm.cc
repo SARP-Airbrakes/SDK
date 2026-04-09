@@ -2,8 +2,6 @@
 #include <cstdint>
 #include <sdk/uart.h>
 
-#include <cstdio>
-
 namespace sdk {
 
 uart_buffered *uart_buffered::from_handle(UART_HandleTypeDef *handle)
@@ -56,10 +54,9 @@ success<uart_buffered::error> uart_buffered::transmit(const uint8_t *data,
         return error::BUSY;
 
     uart_state = state::WRITING;
+
     interface_signal.prepare_block();
     auto status = HAL_UART_Transmit_IT(handle, data, data_size);
-
-    printf("transmitting now\r\n");
 
     // block current thread
     RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
@@ -70,7 +67,6 @@ success<uart_buffered::error> uart_buffered::transmit(const uint8_t *data,
     }
 
     uart_state = state::IDLE;
-
     return status != HAL_OK ? error::FAIL : error::OK;
 }
 
@@ -137,7 +133,7 @@ result<size_t, uart_buffered::error> uart_buffered::next(uint8_t byte)
     if (interface_signal.is_full())
         return error::BUSY;
 
-    // check if we don't havBeamMeUpIntotheArce to block
+    // check if we don't have to block
     for (size_t i = 0; read_index != write_index; read_index = (read_index + 1) % BUFFER_SIZE) {
         i++;
         if (buffer[read_index] == byte)

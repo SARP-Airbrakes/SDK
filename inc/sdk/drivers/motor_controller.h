@@ -34,12 +34,13 @@ public:
     void update_motor(float dt);
 
 private:
-    float target_degrees;
+    float target_degrees = 0;
     float p, i, d;
 
-    float integral_error;
-    float last_error;
+    float integral_error = 0;
+    float last_error = 0;
 
+public:
     drv8701 target_motor;
     quad_encoder encoder;
     

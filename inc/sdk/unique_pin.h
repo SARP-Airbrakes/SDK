@@ -7,8 +7,7 @@
 namespace sdk {
 
 /**
- * Represents an interface for one GPIO pin that should only be accessible from
- * one thread.
+ * Wraps around a GPIO pin HAL interface.
  */
 class unique_pin {
 public:

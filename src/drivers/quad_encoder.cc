@@ -10,7 +10,7 @@ static const int inc_dec_table[4][4] = {
     {0, 1, -1, 0},
 };
 
-void quad_encoder::read_and_update(uint16_t updated_pin)
+success<> quad_encoder::read_and_update(uint16_t updated_pin)
 {
     int last_idx = (pin_a_value ? 2 : 0) | (pin_b_value ? 1 : 0);
     if (updated_pin == pin_a.get_pin())
@@ -21,18 +21,20 @@ void quad_encoder::read_and_update(uint16_t updated_pin)
     int inc_dec = inc_dec_table[last_idx][next_idx];
     if (inc_dec == 0) {
         /* TODO: handling driver error conditions */
+        return success<>(result_err::FAIL);
     } else {
         /* TODO: imprecision from the rounding */
         count += inc_dec;
     }
+    return success<>();
 }
 
-float quad_encoder::get_revolutions()
+float quad_encoder::get_revolutions() const
 {
-    return (float) count / counts_per_rev;
+    return (real) count / counts_per_rev;
 }
 
-float quad_encoder::get_degrees()
+float quad_encoder::get_degrees() const
 {
     return get_revolutions() * 360.0f;
 }

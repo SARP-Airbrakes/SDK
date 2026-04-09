@@ -14,19 +14,11 @@ namespace sdk {
  */
 class drv8701 {
 public:
-
-    using real = pwm::real;
-
-public:
-
     drv8701(
+        real epsilon,
         pwm &&in1, 
-        pwm &&in2, 
-        unique_pin &&sh1, 
-        unique_pin &&sh2,
-        unique_pin &&nsleep
-    ) : in1(std::move(in1)), in2(std::move(in2)), sh1(std::move(sh1)),
-            sh2(std::move(sh2)), nsleep(std::move(nsleep))
+        pwm &&in2
+    ) : epsilon(epsilon), in1(std::move(in1)), in2(std::move(in2))
     {
     }
 
@@ -37,11 +29,9 @@ public:
     void set_power(real power);
 
 private:
+    real epsilon;
     pwm in1;
     pwm in2;
-    unique_pin sh1;
-    unique_pin sh2;
-    unique_pin nsleep;
 };
 
 } // namespace sdk

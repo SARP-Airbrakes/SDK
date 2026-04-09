@@ -1,5 +1,4 @@
 
-#include "stm32f401xc.h"
 #include <sdk/pwm.h>
 
 namespace sdk {
@@ -20,7 +19,7 @@ void pwm::set(real value)
     if (value < 0) value = 0;
     else if (value > 1) value = 1;
 
-    uint32_t ccr = (uint32_t)(value / (real) htim->Instance->ARR);
+    uint32_t ccr = (uint32_t)(value * (real) htim->Instance->ARR);
     switch (channel) {
     case tim_channel::CHANNEL_1:
         htim->Instance->CCR1 = ccr;
@@ -38,7 +37,7 @@ void pwm::set(real value)
 
 }
 
-pwm::real pwm::get_resolution()
+real pwm::get_resolution()
 {
     return 1.0f / (real) htim->Instance->ARR;
 }

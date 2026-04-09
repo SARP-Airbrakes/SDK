@@ -2,6 +2,8 @@
 #ifndef AIRBRAKES_SDK_QUEUE_H_
 #define AIRBRAKES_SDK_QUEUE_H_
 
+#include <sdk/result.h>
+
 #include <FreeRTOS.h>
 #include <queue.h>
 
@@ -14,7 +16,7 @@ template<typename T>
 class queue {
 public:
 
-    enum class status {
+    enum class error {
         // success conditions
         OK = 0,
 
@@ -38,10 +40,10 @@ public:
      * thread up to `timeout_ms` if the queue is full. Returns `status::OK` if
      * the value was sent, else `status::FULL`.
      */
-    status try_push_back(T &val, uint32_t timeout_ms)
+    success<error> try_push_back(T &val, uint32_t timeout_ms)
     {
         return xQueueSendToBack(handle, &val, pdMS_TO_TICKS(timeout_ms)) ==
-            pdPASS ? status::OK : status::FULL;
+            pdPASS ? error::OK : error::FULL;
     }
 
     /**
@@ -49,10 +51,10 @@ public:
      * thread up to `timeout_ms` if the queue is full. Returns `status::OK` if
      * the value was sent, else `status::FULL`.
      */
-    status try_push_front(T &val, uint32_t timeout_ms)
+    success<error> try_push_front(T &val, uint32_t timeout_ms)
     {
         return xQueueSendToFront(handle, &val, pdMS_TO_TICKS(timeout_ms)) ==
-            pdPASS ? status::OK : status::FULL;
+            pdPASS ? error::OK : error::FULL;
     }
 
     /**
@@ -78,9 +80,13 @@ public:
      * the current thread up to `timeout_ms` if the queue is empty. Returns
      * `status::OK` if a value was received, else returns `status::EMPTY`.
      */
-    status try_pop(T *val, uint32_t timeout_ms)
+    result<T, error> try_pop(uint32_t timeout_ms)
     {
-        return xQueueReceive(handle, (void *) val, pdMS_TO_TICKS(timeout_ms));
+        T val;
+        auto status = xQueueReceive(handle, &val, pdMS_TO_TICKS(timeout_ms));
+        if (status != pdPASS)
+            return error::FAIL;
+        return val;
     }
 
     /**

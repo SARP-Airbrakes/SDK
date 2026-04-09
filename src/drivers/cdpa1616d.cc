@@ -17,9 +17,13 @@ success<cdpa1616d::error> cdpa1616d::start()
     uart.transmit(CMD_UPDATE_10HZ, sizeof(CMD_UPDATE_10HZ) - 1);
     uart.transmit(CMD_FIXCTL_10HZ, sizeof(CMD_FIXCTL_10HZ) - 1);
 
+<<<<<<< HEAD
     auto status = uart.read();
     printf("status: %d\r\n", status.err);
     RESULT_UNWRAP_OR(status, error::UART);
+=======
+    RESULT_UNWRAP_OR(uart.read(), error::UART);
+>>>>>>> 62cacc7dedb41e2fc5212fbbc02b84c86094d0a2
     return success<error>();
 }
 

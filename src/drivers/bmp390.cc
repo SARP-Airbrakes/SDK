@@ -1,86 +1,148 @@
 
 #include <sdk/drivers/bmp390.h>
-
 #include <sdk/scoped_lock.h>
+
+#include <cmath>
 
 namespace sdk {
 
-bool bmp390::is_connected()
+result<bool, bmp390::error> bmp390::is_connected()
 {
     uint8_t chip_id = 0;
     auto status = i2c.read(SLAVE_ADDRESS << 1, CHIP_ID_ADDR, &chip_id, 1, false);
-    if (status != i2c_master::status::OK) {
-        return false;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
     return (chip_id & 0xf0) == CHIP_ID_FIXED; /* chip_id_fixed <4:7> */
 }
 
-void bmp390::read_calibration_data()
+success<bmp390::error> bmp390::read_calibration_data()
 {
     uint8_t reg_data[21];
-    i2c_master::status status = i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         NVM_PAR_T1_ADDR,
         reg_data,
         sizeof(reg_data),
         false
     );
-
-    if (status != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return;
-    }
+    RESULT_UNWRAP_OR(status, error::I2C);
 
     /* this is derived from boschsensortec/BMP3_SensorAPI */
-    uint16_t p = (reg_data[1] << 8) | reg_data[0];
-    calib_data.par_t1 = ((real)p * (real)(1 << 8));
-    p = (reg_data[3] << 8) | reg_data[2];
-    calib_data.par_t2 = ((real)p / (real)(1 << 30));
-    p = reg_data[4];
-    calib_data.par_t3 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = (reg_data[6] << 8) | reg_data[5];
-    calib_data.par_p1 = ((real)(p - 16384) / (real)(1 << 20));
-    p = (reg_data[8] << 8) | reg_data[7];
-    calib_data.par_p2 = ((real)(p - 16384) / (real)(1 << 29)); 
-    p = reg_data[9];
-    calib_data.par_p3 = ((real)p / (real)((uint64_t) 1 << 32));
-    p = reg_data[10];
-    calib_data.par_p4 = ((real)p / (real)((uint64_t) 1 << 37));
-    p = (reg_data[12] << 8) | reg_data[11];
-    calib_data.par_p5 = ((real)p * (real)(1 << 3));
-    p = (reg_data[14] << 8) | reg_data[13];
-    calib_data.par_p6 = ((real)p / (real)(1 << 6));
-    p = reg_data[15];
-    calib_data.par_p7 = ((real)p / (real)(1 << 8));
-    p = reg_data[16];
-    calib_data.par_p8 = ((real)p / (real)(1 << 15));
-    p = (reg_data[18] << 8) | reg_data[17];
-    calib_data.par_p9 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = reg_data[19];
-    calib_data.par_p10 = ((real)p / (real)((uint64_t) 1 << 48));
-    p = reg_data[20];
+    
+    // There is a lot of re-interpretation of unsigned values into signed
+    // values, which *seems* superfluous but integer conversion to signed types
+    // is implementation defined when the value does not fit inside of the
+    // signed type. A C++ nightmare!
+    
+    uint16_t par_t1 = (((uint16_t) reg_data[1]) << 8) | reg_data[0];
+    uint16_t par_t2 = (((uint16_t) reg_data[3]) << 8) | reg_data[2];
+    int8_t par_t3 = *((int8_t *) &reg_data[4]);
+    uint16_t p = ((((uint16_t) reg_data[6]) << 8) | reg_data[5]);
+    int16_t par_p1 = *((int16_t *) &p);
+    p = ((((uint16_t) reg_data[8]) << 8) | reg_data[7]);
+    int16_t par_p2 = *((int16_t *) &p);
+    int8_t par_p3 = *((int8_t *) &reg_data[9]);
+    int8_t par_p4 = *((int8_t *) &reg_data[10]);
+    uint16_t par_p5 = (((uint16_t) reg_data[12]) << 8) | reg_data[11];
+    uint16_t par_p6 = (((uint16_t) reg_data[14] << 8)) | reg_data[13];
+    int8_t par_p7 = *((int8_t *) &reg_data[15]);
+    int8_t par_p8 = *((int8_t *) &reg_data[16]);
+    p = ((((uint16_t) reg_data[18]) << 8) | reg_data[17]);
+    int16_t par_p9 = *((int16_t *) &p);
+    int8_t par_p10 = *((int8_t *) &reg_data[19]);
+    int8_t par_p11 = *((int8_t *) &reg_data[20]);
+
+    calib_data.par_t1 = ((real)par_t1 * (real)(1 << 8));
+    calib_data.par_t2 = ((real)par_t2 / (real)(1 << 30));
+    calib_data.par_t3 = ((real)par_t3 / (real)((uint64_t) 1 << 48));
+    calib_data.par_p1 = ((real)(par_p1 - 16384) / (real)(1 << 20));
+    calib_data.par_p2 = ((real)(par_p2 - 16384) / (real)(1 << 29)); 
+    calib_data.par_p3 = ((real)par_p3 / (real)((uint64_t) 1 << 32));
+    calib_data.par_p4 = ((real)par_p4 / (real)((uint64_t) 1 << 37));
+    calib_data.par_p5 = ((real)par_p5 * (real)(1 << 3));
+    calib_data.par_p6 = ((real)par_p6 / (real)(1 << 6));
+    calib_data.par_p7 = ((real)par_p7 / (real)(1 << 8));
+    calib_data.par_p8 = ((real)par_p8 / (real)(1 << 15));
+    calib_data.par_p9 = ((real)par_p9 / (real)((uint64_t) 1 << 48));
+    calib_data.par_p10 = ((real)par_p10 / (real)((uint64_t) 1 << 48));
     /* 2^65 */
-    calib_data.par_p11 = ((real)p / 36893488147419103232.0f);
+    calib_data.par_p11 = ((real)par_p11 / 36893488147419103232.0f);
+    return success<error>();
 }
 
-void bmp390::update()
+success<bmp390::error> bmp390::update()
 {
-    state out;
-    bool success = fetch_data(out);
-    if (!success) {
-        /* TODO: error condition */
-        return;
-    }
+    auto result = fetch_data();
+    RESULT_UNWRAP(result);
 
     scoped_lock lock(state_mutex);
-    current_state = out;
+    current_state = result.unwrap();
+    return success<error>();
 }
 
-void bmp390::set_config(uint8_t filter_coefficient)
+success<bmp390::error> bmp390::set_power(bool press, bool temp, pwr_mode mode)
+{
+    uint8_t config = 0;
+    config |= (press ? 0x01 : 0x00);
+    config |= (temp ? 0x02 : 0x00);
+    config |= ((uint8_t) mode) << 4;
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        PWR_CTRL_ADDR,
+        &config,
+        sizeof(config),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_config(uint8_t filter_coefficient)
 {
     uint8_t config = (filter_coefficient & 0x07) << 1;
-    i2c.write(SLAVE_ADDRESS << 1, CONFIG_ADDR, &config, sizeof(config), false);
-    /* TODO: error handling */
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        CONFIG_ADDR,
+        &config,
+        sizeof(config),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_osr(osr pressure, osr temperature)
+{
+    uint8_t out = 0;
+    out |= ((uint8_t) pressure) & 0x07;
+    out |= (((uint8_t) temperature) & 0x07) << 3;
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        OSR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
+}
+
+success<bmp390::error> bmp390::set_odr(odr rate) 
+{
+    uint8_t out = ((uint8_t) rate) & 0x1f;
+
+    // clamp the written value
+    if (out > (uint8_t) bmp390::odr::ODR_0_0015)
+        out = (uint8_t) bmp390::odr::ODR_0_0015;
+
+    auto status = i2c.write(
+        SLAVE_ADDRESS << 1,
+        ODR_ADDR,
+        &out,
+        sizeof(out),
+        false
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+    return success<error>();
 }
 
 bmp390::state bmp390::copy_state()
@@ -90,12 +152,12 @@ bmp390::state bmp390::copy_state()
     return current_state;
 }
 
-bmp390::real bmp390::compensate_temperature(data_frame frame)
+real bmp390::compensate_temperature(data_frame frame)
 {
     uint32_t uncomp = 0;
-    uncomp |= frame[0];
-    uncomp |= frame[1] << 8;
-    uncomp |= frame[2] << 16;
+    uncomp |= frame[3];
+    uncomp |= frame[4] << 8;
+    uncomp |= frame[5] << 16;
     real partial0 = (real)uncomp - calib_data.par_t1;
     real partial1 = partial0 * calib_data.par_t2;
 
@@ -103,12 +165,12 @@ bmp390::real bmp390::compensate_temperature(data_frame frame)
     return partial1 + (partial0 * partial0) * calib_data.par_t3;
 }
 
-bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
+real bmp390::compensate_pressure(real temp_c, data_frame frame)
 {
     uint32_t uncomp = 0;
-    uncomp |= frame[3];
-    uncomp |= frame[4] << 8;
-    uncomp |= frame[5] << 16;
+    uncomp |= frame[0];
+    uncomp |= frame[1] << 8;
+    uncomp |= frame[2] << 16;
 
     real partial0 = calib_data.par_p6 * temp_c;
     real partial1 = calib_data.par_p7 * temp_c * temp_c;
@@ -132,23 +194,38 @@ bmp390::real bmp390::compensate_pressure(real temp_c, data_frame frame)
     return out;
 }
 
-bool bmp390::fetch_data(state &out)
+real bmp390::estimate_altitude(real pressure_pascals)
+{
+    // this is from the BMP180 driver datasheet (see section 3.6). The equation
+    // is labeled as the "international barometric equation". It's really just
+    // the barometric equation (see Wikipedia or whatever) re-arranged, assuming
+    // a isothermal temp. of 15 deg C.
+    
+    // TODO: Ideally, we would also use the temperature reading: hypsometric
+    // equation to also include temperature reading?
+    real out = 1.0f - powf(pressure_pascals / SEA_LEVEL_PRESSURE_PASCALS, 1.0f / 5.255f);
+    return 44330.0f * out;
+}
+
+result<bmp390::state, bmp390::error> bmp390::fetch_data()
 {
     // also reads reversed bytes
     data_frame frame;
-    if (i2c.read(
+    auto status = i2c.read(
         SLAVE_ADDRESS << 1,
         DATA_0_ADDR,
         frame,
         sizeof(data_frame),
         false
-    ) != i2c_master::status::OK) {
-        /* TODO: error condition */
-        return false;
-    };
+    );
+    RESULT_UNWRAP_OR(status, error::I2C);
+
+    state out;
     out.temperature_celsius = compensate_temperature(frame);
     out.pressure_pascals = compensate_pressure(out.temperature_celsius, frame);
-    return true;
+    out.altitude_meters = estimate_altitude(out.pressure_pascals);
+
+    return out;
 }
 
 } // namespace sdk

@@ -3,6 +3,7 @@
 #define AIRBRAKES_SDK_PWM_H_
 
 #include <stm32f4xx_hal.h>
+#include <sdk/vecmath.h>
 
 namespace sdk {
 
@@ -14,8 +15,6 @@ public:
         CHANNEL_3 = TIM_CHANNEL_3,
         CHANNEL_4 = TIM_CHANNEL_4
     };
-
-    using real = float;
 
 public:
     
