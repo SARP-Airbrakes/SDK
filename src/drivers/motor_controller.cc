@@ -41,6 +41,8 @@ void motor_controller::update_motor(float dt)
     if (output > 1) output = 1;
     else if (output < -1) output = -1;
 
+    commanded_power = output;
+
     target_motor.set_power(output);
 }
 

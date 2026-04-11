@@ -36,7 +36,7 @@ struct vec3 {
         return x * rhs.x + y * rhs.y + z * rhs.z;
     }
 
-    inline real length_sqr() const {
+    inline real magnitude_sqr() const {
         return dot(*this);
     }
 };

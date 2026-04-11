@@ -1,17 +1,13 @@
 
 #include <cstdint>
+#include <cstdio>
 #include <sdk/uart.h>
 
 namespace sdk {
 
-uart_buffered *uart_buffered::from_handle(UART_HandleTypeDef *handle)
-{
-    return (uart_buffered *) handle->hdmatx;
-}
-
 success<uart_buffered::error> uart_buffered::set_baud(uint32_t baud)
 {
-    if (uart_state != state::IDLE)
+    if (rx_state != state::IDLE)
         return error::BUSY;
 
     uint32_t pclk_freq = 0;
@@ -32,13 +28,13 @@ success<uart_buffered::error> uart_buffered::set_baud(uint32_t baud)
 
 success<uart_buffered::error> uart_buffered::read()
 {
-    if (uart_state != state::IDLE)
+    if (rx_state != state::IDLE)
         return error::BUSY;
 
     if ((write_index + 1) % BUFFER_SIZE == read_index)
         return error::FULL;
 
-    uart_state = state::READING;
+    rx_state = state::OPERATING;
 
     // read one byte
     auto status = HAL_UART_Receive_IT(handle, &buffer[write_index], 1);
@@ -50,36 +46,35 @@ success<uart_buffered::error> uart_buffered::read()
 success<uart_buffered::error> uart_buffered::transmit(const uint8_t *data,
         size_t data_size)
 {
-    if (interface_signal.is_full() || uart_state != state::IDLE)
+    if (interface_tx_signal.is_full() || tx_state != state::IDLE)
         return error::BUSY;
 
-    uart_state = state::WRITING;
+    tx_state = state::OPERATING;
 
-    interface_signal.prepare_block();
+    interface_tx_signal.prepare_block();
     auto status = HAL_UART_Transmit_IT(handle, data, data_size);
 
     // block current thread
-    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
+    RESULT_UNWRAP_OR(interface_tx_signal.block(), error::BUSY);
 
-    if (uart_state == state::ERROR) {
-        uart_state = state::IDLE;
+    if (tx_state == state::ERROR) {
+        tx_state = state::IDLE;
         return error::FAIL;
     }
 
-    uart_state = state::IDLE;
     return status != HAL_OK ? error::FAIL : error::OK;
 }
 
 void uart_buffered::stop()
-{
-    if (uart_state == state::READING) {
-        uart_state = state::STOPPING;
+{ 
+    if (rx_state == state::OPERATING) {
+        rx_state = state::STOPPING;
     }
 }
 
 void uart_buffered::receive_complete_from_isr() 
 {
-    if (uart_state == state::READING) {
+    if (rx_state == state::OPERATING) {
         // if there is space in the buffer
         if ((write_index + 1) % BUFFER_SIZE != read_index) {
             uint8_t received_byte = buffer[write_index];
@@ -88,70 +83,65 @@ void uart_buffered::receive_complete_from_isr()
              * interrupt. I assume that there will not ever be errors here to worry
              * about unless there are serious connectivity issues.
              */
-            HAL_UART_Receive_IT(handle, &buffer[write_index], 1);
+            HAL_UART_Receive_IT(handle, buffer + write_index, 1);
 
             write_index = (write_index + 1) % BUFFER_SIZE;
             await_size += 1;
 
-            if (interface_signal.is_full() && received_byte == target_byte)
-                interface_signal.unblock_from_isr();
+            if (interface_rx_signal.is_full() && received_byte == target_byte)
+                interface_rx_signal.unblock_from_isr();
         } else {
-            uart_state = state::FULL;
+            /* we're full, pass */
         }
-    } else if (uart_state == state::STOPPING) {
-        uart_state = state::IDLE;
+    } else if (rx_state == state::STOPPING) {
+        rx_state = state::IDLE;
 
         // make sure we aren't blocking anything
-        if (interface_signal.is_full()) 
-            interface_signal.unblock_from_isr();
+        if (interface_rx_signal.is_full()) 
+            interface_rx_signal.unblock_from_isr();
     }
 }
 
 void uart_buffered::transmit_complete_from_isr()
 {
-    uart_state = state::IDLE;
+    tx_state = state::IDLE;
 
-    if (interface_signal.is_full()) 
-        interface_signal.unblock_from_isr();
+    if (interface_tx_signal.is_full()) 
+        interface_tx_signal.unblock_from_isr();
 }
 
 void uart_buffered::error_from_isr()
 {
-    uart_state = state::ERROR;
+    rx_state = state::ERROR;
 
-    if (interface_signal.is_full()) 
-        interface_signal.unblock_from_isr();
+    if (interface_rx_signal.is_full()) 
+        interface_rx_signal.unblock_from_isr();
+    if (interface_tx_signal.is_full()) 
+        interface_tx_signal.unblock_from_isr();
 }
 
 bool uart_buffered::is_full()
 {
-    return uart_state != state::FULL;
+    return ((write_index + 1) % BUFFER_SIZE == read_index);
 }
 
 result<size_t, uart_buffered::error> uart_buffered::next(uint8_t byte)
 {
-    if (interface_signal.is_full())
+    if (interface_rx_signal.is_full())
         return error::BUSY;
-
-    // check if we don't have to block
-    for (size_t i = 0; read_index != write_index; read_index = (read_index + 1) % BUFFER_SIZE) {
-        i++;
-        if (buffer[read_index] == byte)
-            return i;
-    }
 
     // else, block
     target_byte = byte;
 
     // block current thread
-    RESULT_UNWRAP_OR(interface_signal.block(), error::BUSY);
+    RESULT_UNWRAP_OR(interface_rx_signal.block(), error::BUSY);
+    size_t out = await_size;
 
-    if (uart_state == state::ERROR) {
-        uart_state = state::IDLE;
+    if (rx_state == state::ERROR) {
+        rx_state = state::IDLE;
         return error::FAIL;
     }
     
-    size_t out = await_size;
     await_size = 0;
     return out;
 }
@@ -162,7 +152,7 @@ result<size_t, uart_buffered::error> uart_buffered::move(uint8_t *out, size_t si
     /* invalidate await size state */
     await_size = 0;
     for (size_t i = 0; read_index != write_index; read_index = (read_index + 1) % BUFFER_SIZE) {
-        if (i >= size)
+        if (i > size)
             return number;
         out[i++] = buffer[read_index];
         number++;

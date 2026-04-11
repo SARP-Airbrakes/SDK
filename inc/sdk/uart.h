@@ -7,6 +7,7 @@
 
 #include <sdk/result.h>
 #include <sdk/signal.h>
+#include <cstdio>
 
 namespace sdk {
 
@@ -30,26 +31,15 @@ public:
 
     enum class state {
         IDLE,
-        READING,
-        WRITING,
-        FULL,
+        OPERATING,
         STOPPING,
         ERROR,
     };
 
 public:
 
-    /** Gets a sdk::uart_buffered object associated with a UART HAL handle. */
-    static uart_buffered *from_handle(UART_HandleTypeDef *handle);
-
     uart_buffered(UART_HandleTypeDef *handle) : handle(handle)
     {
-        /*
-         * Storing "this" inside of a random (importantly unused) field in the
-         * handle. Using a C-style cast here to avoid C++ reintepretation
-         * mechanics.
-         */
-        handle->hdmatx = (DMA_HandleTypeDef *) this;
     }
 
     // move-only semantics (circular buffer should not be copied) */
@@ -116,8 +106,10 @@ public:
 private:
     UART_HandleTypeDef *handle;
 
-    state uart_state = state::IDLE;
-    signal interface_signal;
+    state rx_state = state::IDLE;
+    state tx_state = state::IDLE;
+    signal interface_rx_signal;
+    signal interface_tx_signal;
 
     uint8_t target_byte;
     size_t await_size = 0;

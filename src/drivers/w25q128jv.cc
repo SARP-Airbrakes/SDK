@@ -156,7 +156,7 @@ success<w25q128jv::error> w25q128jv::block_for_busy_bit(uint32_t attempts)
         if ((value & 0x01) == 0) { 
             return success<error>();
         }
-        osDelay(10);
+        osDelay(20);
     }
     return error::BUSY;
 }

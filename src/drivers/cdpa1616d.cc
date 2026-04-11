@@ -1,6 +1,7 @@
 
 #include <cmath>
 #include <cstdio>
+
 #include <sdk/drivers/cdpa1616d.h>
 #include <sdk/scoped_lock.h>
 
@@ -12,8 +13,10 @@ static const uint8_t CMD_FIXCTL_10HZ[] = "$PMTK500,100,0,0,0.0,0.0*2A\r\n";
 
 success<cdpa1616d::error> cdpa1616d::start()
 {
+    /*
     uart.transmit(CMD_BAUD_38400, sizeof(CMD_BAUD_38400) - 1);
     uart.set_baud(38400);
+    */
     uart.transmit(CMD_UPDATE_10HZ, sizeof(CMD_UPDATE_10HZ) - 1);
     uart.transmit(CMD_FIXCTL_10HZ, sizeof(CMD_FIXCTL_10HZ) - 1);
 
@@ -36,6 +39,20 @@ success<cdpa1616d::error> cdpa1616d::update()
 
     RESULT_UNWRAP_OR(uart.move(buffer, to_read), error::UART);
     buffer[to_read] = 0;
+
+    for (uint8_t *c = buffer; *c; c++)
+        printf("0x%.2x ", *c);
+    printf("\r\n");
+    for (uint8_t *c = buffer; *c; c++) {
+        if (*c == '\n') {
+            printf("\\n   ");
+        } else if (*c == '\r') {
+            printf("\\r   ");
+        } else {
+            printf("%c    ", *c);
+        }
+    }
+    printf("\r\n");
 
     // unsafe cast
     RESULT_UNWRAP(process_command((const char *) buffer));

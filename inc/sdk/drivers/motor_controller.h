@@ -33,8 +33,8 @@ public:
     /** Recalculates motor power. Thread-safe blocking. */
     void update_motor(float dt);
 
-private:
     float target_degrees = 0;
+    float commanded_power = 0;
     float p, i, d;
 
     float integral_error = 0;

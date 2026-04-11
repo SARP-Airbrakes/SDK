@@ -35,18 +35,18 @@ public:
 
     struct state {
         /* between 0-23 */
-        uint8_t utc_hours;
+        uint8_t utc_hours = 0;
         /* between 0-59 */
-        uint8_t utc_minutes;
+        uint8_t utc_minutes = 0;
 
-        bool data_valid;
+        bool data_valid = 0;
 
         /* between 0.000-59.999 */
-        real utc_seconds;
-        real altitude_meters;
-        real speed_over_ground_knots;
-        real course_over_ground_degrees;
-        gps_fix fixed;
+        real utc_seconds = 0;
+        real altitude_meters = 0;
+        real speed_over_ground_knots = 0;
+        real course_over_ground_degrees = 0;
+        gps_fix fixed = gps_fix::NO_FIX;
     };
 
     enum class error {
@@ -78,7 +78,6 @@ public:
      */
     state copy_state();
 
-private:
 
     // nmea command processing
     success<error> process_gga(const char *str);

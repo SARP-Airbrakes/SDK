@@ -1,4 +1,6 @@
+
 #pragma once
+
 #include "stdint.h"
 #include <sdk/transport.hpp>
 #include <cstddef>
@@ -8,7 +10,7 @@
 #include "usbd_def.h"
 
 extern "C" {
-uint8_t CDC_Transmit_FS(uint8_t* Buf, std::uint16_t Len);
+uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 }
 
 #ifndef SDK_TRANSPORT_LOCK
@@ -86,9 +88,9 @@ public:
     }
 
     size_t write(const uint8_t* buf, size_t len) override {
-        SDK_TRANSPORT_LOCK();
+        //SDK_TRANSPORT_LOCK();
         const size_t pushed = tx_buffer_.push(buf, len);
-        SDK_TRANSPORT_UNLOCK();
+        //SDK_TRANSPORT_UNLOCK();
 
         if (pushed < len) tx_dropped_ += static_cast<uint32_t>(len - pushed);
         return pushed;
@@ -104,13 +106,13 @@ public:
 
         size_t to_send = 0;
 
-        SDK_TRANSPORT_LOCK();
+        //SDK_TRANSPORT_LOCK();
         const size_t avail = tx_buffer_.available();
         if (avail != 0) {
             const size_t want = (avail < MaxPacket) ? avail : MaxPacket;
             to_send = tx_buffer_.pop(tx_stage_, want);
         }
-        SDK_TRANSPORT_UNLOCK();
+        //SDK_TRANSPORT_UNLOCK();
 
         if (to_send == 0) return;
 
