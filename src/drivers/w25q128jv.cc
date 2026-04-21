@@ -48,6 +48,28 @@ success<w25q128jv::error> w25q128jv::erase()
     return success<error>();
 }
 
+success<w25q128jv::error> w25q128jv::sector_erase(uint32_t address)
+{
+    uint8_t cmd[4];
+    cmd[0] = SECTOR_ERASE_COMMAND;
+    cmd[1] = (address >> 16) & 0xFF; // msb
+    cmd[2] = (address >> 8) & 0xFF;
+    cmd[3] = address & 0xFF; // lsb
+
+    RESULT_UNWRAP(block_for_busy_bit());
+    RESULT_UNWRAP(enable_write());
+
+    {
+        auto pin = enable_chip();
+
+        auto status = interface.transmit(cmd, sizeof(cmd));
+        RESULT_UNWRAP_OR(status, error::SPI);
+    }
+
+    RESULT_UNWRAP(block_for_busy_bit(1024));
+    return success<error>();
+}
+
 success<w25q128jv::error> w25q128jv::read(uint32_t address,
         uint8_t *data, uint32_t data_size)
 {

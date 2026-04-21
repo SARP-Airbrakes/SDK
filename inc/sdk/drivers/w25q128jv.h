@@ -23,6 +23,7 @@ public: // constants
     static constexpr int READ_DATA_COMMAND = 0x03;
     static constexpr int READ_STATUS_REGISTER_1_COMMAND = 0x05;
     static constexpr int WRITE_ENABLE_COMMAND = 0x06;
+    static constexpr int SECTOR_ERASE_COMMAND = 0x20;
     static constexpr int CHIP_ERASE_COMMAND = 0x60; // or 0xc7
     static constexpr int READ_MANUFACTURER_DEVICE_ID_COMMAND = 0x90;
 
@@ -52,6 +53,11 @@ public:
      * Erases the chip. Thread-safe blocking.
      */
     success<error> erase();
+
+    /**
+     * Erases a 4KB sector from the chip. Thread-safe blocking.
+     */
+    success<error> sector_erase(uint32_t address);
 
     /**
      * Reads `size` bytes into `buffer` from the flash memory starting at
