@@ -23,7 +23,7 @@ void motor_controller::update_motor(float dt)
     float curr_degrees = encoder.get_degrees();
     float error = target_degrees - curr_degrees;
 
-    integral_error = error * dt;
+    integral_error += error * dt;
 
     // reset integral error if error switches sign
     if ((last_error <= 0) != (error <= 0)) {
