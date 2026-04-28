@@ -15,7 +15,6 @@ project(airbrakes_sdk
 add_library(airbrakes_sdk OBJECT
     src/drivers/bmi088.cc
     src/drivers/bmp390.cc
-    src/drivers/cdpa1616d.cc
     src/drivers/drv8701.cc
     src/drivers/motor_controller.cc
     src/drivers/quad_encoder.cc
@@ -26,7 +25,6 @@ add_library(airbrakes_sdk OBJECT
     src/pwm.cc
     src/signal_rtos.cc
     src/spi_stm.cc
-    src/uart_stm.cc
     src/unique_pin_stm.cc
 )
 
