@@ -148,7 +148,6 @@ result<bool, bmi088::error> bmi088::is_connected()
         1,
         false
     );
-    printf("%d\r\n", (int) status.err);
     RESULT_UNWRAP_OR(status, error::I2C);
     return acc_chip_id == ACC_CHIP_ID;
 }
