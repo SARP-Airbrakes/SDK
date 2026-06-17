@@ -89,7 +89,7 @@ void motor_controller::update_pid(float dt)
 
 void motor_controller::update_calibration(float dt)
 {
-    target_motor.set_power(-0.6f);
+    target_motor.set_power(0.6f);
     if (!last_encoder_degrees) {
         last_encoder_degrees = encoder.get_degrees();
     } else {
