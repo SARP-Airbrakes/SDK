@@ -1,6 +1,9 @@
 
 #include <sdk/drivers/quad_encoder.h>
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 namespace sdk {
 
 static const int inc_dec_table[4][4] = {
@@ -24,19 +27,46 @@ success<> quad_encoder::read_and_update(uint16_t updated_pin)
         return success<>(result_err::FAIL);
     } else {
         /* TODO: imprecision from the rounding */
+
+        UBaseType_t status = taskENTER_CRITICAL_FROM_ISR();
         count += inc_dec;
+        taskEXIT_CRITICAL_FROM_ISR(status);
     }
     return success<>();
 }
 
+int32_t quad_encoder::get_count() const
+{
+    int32_t local_count;
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+        taskENTER_CRITICAL();
+        local_count = count;
+        taskEXIT_CRITICAL();
+    } else {
+        local_count = count;
+    }
+    return local_count;
+}
+
 float quad_encoder::get_revolutions() const
 {
-    return (real) count / counts_per_rev;
+    return (real) get_count() / counts_per_rev;
 }
 
 float quad_encoder::get_degrees() const
 {
     return get_revolutions() * 360.0f;
+}
+
+void quad_encoder::set_count(int32_t count)
+{
+    if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) {
+        taskENTER_CRITICAL();
+        this->count = count;
+        taskEXIT_CRITICAL();
+    } else {
+        this->count = count;
+    }
 }
 
 } // namespace sdk

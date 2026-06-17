@@ -102,7 +102,7 @@ void motor_controller::update_calibration(float dt)
                         MIN_CALIBRATION_STALL_DELTA) {
 
                     // temporary value
-                    encoder.count = calibration_encoder_offset;
+                    encoder.set_count(calibration_encoder_offset);
                     switch_states(state::ACTIVE);
                 }
             } else {
